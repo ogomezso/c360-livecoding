@@ -1,0 +1,55 @@
+# ===========================================================================
+# IMPORTANT: DO NOT PUT CREDENTIALS IN THIS FILE
+# ===========================================================================
+# Use environment variables instead:
+#   export TF_VAR_confluent_cloud_api_key='your-key'
+#   export TF_VAR_confluent_cloud_api_secret='your-secret'
+#
+# Or use the helper:
+#   make setup-credentials  # Prompts and saves to .env.local
+#   source .env.local       # Load credentials
+#
+# Get credentials at: https://confluent.cloud/settings/api-keys
+# Required scope: Cloud resource management (Organization level)
+# ===========================================================================
+
+# Confluent Cloud API Credentials
+# (Set via environment variables - DO NOT SET HERE)
+# confluent_cloud_api_key    = ""  # Set via TF_VAR_confluent_cloud_api_key
+# confluent_cloud_api_secret = ""  # Set via TF_VAR_confluent_cloud_api_secret
+
+# Environment Configuration
+environment_name         = "customer-360-demo"
+environment_display_name = "customer-360-demo-environment"  # No spaces allowed!
+
+# Kafka Cluster Configuration (Standard cluster with public endpoints)
+cluster_display_name = "customer-360-cluster"
+cluster_cloud        = "AWS"
+cluster_region       = "eu-west-1" # Ireland (closest European region)
+cluster_availability = "MULTI_ZONE" # Multi-zone for 99.99% SLA (requires 2+ eCKU min)
+# Note: Standard clusters auto-scale from 0-10 eCKU, no CKU configuration needed
+
+# Flink Compute Pool Configuration
+flink_compute_pool_name = "customer-360-flink-pool"
+flink_max_cfu           = 10 # Maximum CFUs (scales from 0 when not in use)
+
+# Service Account Configuration
+service_account_name        = "customer-360-sa"
+service_account_description = "Service account for Customer 360 demo application"
+
+# Resource Tags
+tags = {
+  project     = "customer-360"
+  environment = "demo"
+  managed_by  = "terraform"
+  workshop    = "livecoding"
+}
+
+# Alternative AWS Regions (Europe)
+# eu-west-1      = Ireland (recommended - most services available)
+# eu-west-2      = London
+# eu-west-3      = Paris
+# eu-central-1   = Frankfurt
+# eu-central-2   = Zurich
+# eu-north-1     = Stockholm
+# eu-south-1     = Milan

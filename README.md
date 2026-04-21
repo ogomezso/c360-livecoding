@@ -2,6 +2,27 @@
 
 Minimal checklist to implement the live demo: **Customer 360 data product on Confluent DSP using Flink + Claude Code (via MCP)**.
 
+## 📊 Current Status
+
+**✅ Completed:**
+
+- Infrastructure provisioned (Terraform)
+- Confluent MCP server configured and working
+- Kafka cluster running: `customer-360-cluster` (lkc-jq5kwq, AWS eu-west-1)
+- Flink compute pool ready
+- Environment protection (.gitignore consolidated)
+
+**🚧 In Progress:**
+
+- Creating Kafka topics and schemas
+- Generating synthetic data
+- Building Flink SQL transformations
+
+**⏳ To Do:**
+
+- Create `customer_360_snapshot` data product
+- (Optional) Configure Tableflow integration
+
 ---
 
 ## 1. Goal
@@ -24,9 +45,29 @@ Claude Code should help to:
 
 ## 2. DSP Setup (Confluent)
 
+**⚡ Automated Setup Available!** Use Terraform to provision the entire Confluent Cloud infrastructure:
+
+```bash
+cd environment/terraform-confluent-aws
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your Confluent Cloud API credentials
+terraform init
+terraform apply
+```
+
+See [environment/terraform-confluent-aws/README.md](environment/terraform-confluent-aws/README.md) for complete instructions.
+
+**What gets provisioned:**
+- ✅ Confluent Cloud Environment
+- ✅ Enterprise Kafka Cluster (AWS eu-west-1, Multi-Zone)
+- ✅ Flink Compute Pool (Serverless, 0-10 CFUs)
+- ✅ Service Account with proper RBAC roles
+- ✅ API Keys for Kafka and Flink
+- ✅ Schema Registry (included with cluster)
+
 ### 2.1 Kafka & Schema Registry
 
-Create a demo environment with:
+After infrastructure is provisioned, create topics and schemas:
 
 - **Kafka topics** (example names):
   - `corebank.customers`
@@ -44,16 +85,22 @@ Populate topics with **realistic synthetic data**.
 
 ### 2.2 Flink
 
-- Create a **compute pool** and **Flink SQL workspace** in Confluent Cloud.
-- Verify you can:
-  - Run `SELECT * FROM <table> LIMIT 10;` using simple dynamic tables.
-  - Create tables and jobs from the Flink console.
+The Terraform configuration automatically creates:
+
+- ✅ **Flink compute pool** (serverless, auto-scales 0-10 CFUs)
+- ✅ **Flink API key** with FlinkDeveloper role
+- ✅ Direct console access via output URLs
+
+Verify you can:
+- Run `SELECT * FROM <table> LIMIT 10;` using simple dynamic tables
+- Create tables and jobs from the Flink console
+- Access Flink SQL workspace at: `terraform output -raw confluent_cloud_console_urls | jq -r '.flink_console'`
 
 ### 2.3 (Optional) Tableflow
 
 - Configure integration with S3/ADLS if you want to show materialization:
-  - A demo bucket/account.
-  - At least one topic enabled with Tableflow to confirm it works.
+  - A demo bucket/account
+  - At least one topic enabled with Tableflow to confirm it works
 
 ---
 
@@ -61,44 +108,86 @@ Populate topics with **realistic synthetic data**.
 
 ### 3.1 MCP Server (Confluent MCP)
 
-Implement an MCP server (e.g. `confluent-mcp`) that uses Confluent Cloud APIs and exposes at least these tools:
+**⚡ Quick Setup:** This project includes automated provisioning scripts for the official Confluent MCP server!
+
+```bash
+cd environment/mcp-confluent
+./provision-confluent-mcp.sh
+```
+
+See [environment/mcp-confluent/README.md](environment/mcp-confluent/README.md) for complete setup instructions.
+
+The Confluent MCP server provides **50+ tools** including:
 
 **Kafka / schemas:**
 
 - `list_topics()`
 - `get_topic_schema(topic)`
 - `sample_records(topic, limit)`
+- `create_topic()`, `delete_topic()`
+- `produce_message()`, `consume_messages()`
 
-**Flink:**
+**Schema Registry:**
 
-- `run_flink_sql(statement)`
-- (Optional) `list_flink_tables()`, `describe_flink_table(name)`
+- `register_schema()`, `list_schemas()`
+- `get_schema()`, `delete_schema()`
 
-The server should:
+**Flink SQL:**
 
-- Read Confluent Cloud credentials (API key/secret, org/env/cluster IDs).
-- Handle errors and return clear messages to Claude.
+- `execute_flink_sql(statement)`
+- `list_flink_statements()`, `get_flink_statement()`
+- `create_flink_compute_pool()`, `list_flink_compute_pools()`
+
+**Cloud Management:**
+
+- `create_environment()`, `list_environments()`
+- `create_cluster()`, `list_clusters()`
+- `create_api_key()`, `delete_api_key()`
+
+**Tableflow:**
+
+- `create_tableflow_topic()`, `list_tableflow_topics()`
+
+The server:
+
+- Uses official Confluent Cloud APIs
+- Reads credentials from `.env` file
+- Handles errors and returns clear messages to Claude
+- Supports multiple transport modes (stdio, HTTP, SSE)
 
 ### 3.2 Configuration in Claude Code
 
-In Claude Code’s configuration file, add something like:
+After running the provisioning script, add to your Claude Code MCP settings:
 
-  ```json
- {
-"mcpServers": {
-"confluent": {
-"command": "confluent-mcp",
-"args": ["--config", "mcp-config.yaml"]
+```json
+{
+  "mcpServers": {
+    "confluent": {
+      "command": "/Users/yourusername/.confluent-mcp/start-mcp-server.sh",
+      "args": []
+    }
+  }
 }
-}
-}
-  ```
+```
 
-Validate that from Claude you can call, for example:
+Or use npx directly:
 
-- `confluent.list_topics`
-- `confluent.sample_records` on a test topic
-- `confluent.run_flink_sql` with a simple `SELECT 1`
+```json
+{
+  "mcpServers": {
+    "confluent": {
+      "command": "npx",
+      "args": ["-y", "@confluentinc/mcp-confluent", "-e", "/path/to/.env"]
+    }
+  }
+}
+```
+
+Validate that from Claude you can call tools like:
+
+- `list_topics`
+- `get_topic_schema` on a test topic
+- `execute_flink_sql` with a simple `SELECT 1`
 
 ---
 

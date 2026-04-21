@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Confluent MCP Server with HTTP transport
+  confluent-mcp-server:
+    image: node:18-alpine
+    container_name: confluent-mcp-server
+    working_dir: /app
+    command: >
+      sh -c "npm install -g @confluentinc/mcp-confluent &&
+             npx @confluentinc/mcp-confluent -e /app/.env --transport http,sse"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./minimal-cloud-setup.env:/app/.env:ro
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Local Kafka (for testing with local setup)
+  kafka:
+    image: confluentinc/confluent-local:latest
+    container_name: kafka-local
+    ports:
+      - "9092:9092"
+      - "8082:8082"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Schema Registry (for local testing)
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry-local
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+networks:
+  default:
+    name: confluent-mcp-network
