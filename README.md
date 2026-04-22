@@ -59,6 +59,7 @@ terraform apply
 See [environment/terraform-confluent-aws/README.md](environment/terraform-confluent-aws/README.md) for complete instructions.
 
 **What gets provisioned:**
+
 - ✅ Confluent Cloud Environment
 - ✅ Enterprise Kafka Cluster (AWS eu-west-1, Multi-Zone)
 - ✅ Flink Compute Pool (Serverless, 0-10 CFUs)
@@ -70,10 +71,21 @@ See [environment/terraform-confluent-aws/README.md](environment/terraform-conflu
 
 **Kafka topics** are automatically created by Terraform (`terraform-confluent-aws/topics.tf`):
 
+**Customer 360 Topics:**
+
 - `corebank.customers` - Customer master data (compacted, Avro)
 - `corebank.accounts` - Account information (compacted, Avro)
 - `corebank.transactions` - Transaction events (30-day retention, Avro)
 - `digital.interactions` - Digital channel interactions (30-day retention, **Plain JSON - schemaless**)
+
+**Additional Datagen Demo Topics:**
+
+- `clickstream` - Web analytics events (7-day retention, Avro, Datagen connector)
+- `orders` - E-commerce order events (30-day retention, Avro, Datagen connector)
+- `pageviews` - Marketing analytics events (7-day retention, Avro, Datagen connector)
+- `stock_trades` - Financial market events (7-day retention, Avro, Datagen connector)
+
+These Datagen topics provide additional demo scenarios beyond Customer 360. The connectors automatically generate realistic synthetic data using Confluent's quickstart templates.
 
 **Schemas:**
 
@@ -112,6 +124,7 @@ The Terraform configuration automatically creates:
 - ✅ Direct console access via output URLs
 
 Verify you can:
+
 - Run `SELECT * FROM <table> LIMIT 10;` using simple dynamic tables
 - Create tables and jobs from the Flink console
 - Access Flink SQL workspace at: `terraform output -raw confluent_cloud_console_urls | jq -r '.flink_console'`
