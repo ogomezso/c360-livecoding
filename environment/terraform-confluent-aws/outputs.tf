@@ -102,6 +102,18 @@ output "flink_api_secret" {
   sensitive   = true
 }
 
+output "schema_registry_api_key" {
+  description = "The Schema Registry API Key"
+  value       = confluent_api_key.customer_360_schema_registry_api_key.id
+  sensitive   = true
+}
+
+output "schema_registry_api_secret" {
+  description = "The Schema Registry API Secret"
+  value       = confluent_api_key.customer_360_schema_registry_api_key.secret
+  sensitive   = true
+}
+
 # Consolidated connection information
 output "connection_info" {
   description = "Connection information for the Customer 360 infrastructure"
@@ -157,6 +169,11 @@ output "mcp_server_env_config" {
     FLINK_COMPUTE_POOL_ID=${confluent_flink_compute_pool.customer_360.id}
     FLINK_CLOUD=${var.cluster_cloud}
     FLINK_REGION=${var.cluster_region}
+
+    # Schema Registry
+    SCHEMA_REGISTRY_URL=${data.confluent_schema_registry_cluster.customer_360.rest_endpoint}
+    SCHEMA_REGISTRY_API_KEY=${confluent_api_key.customer_360_schema_registry_api_key.id}
+    SCHEMA_REGISTRY_API_SECRET=${confluent_api_key.customer_360_schema_registry_api_key.secret}
   EOT
   sensitive = true
 }

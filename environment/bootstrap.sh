@@ -350,7 +350,36 @@ EOF
 }
 
 # ============================================================================
-# Step 7: Validate Setup
+# Step 7: Generate Demo Data (Optional)
+# ============================================================================
+generate_demo_data() {
+    log_section "Step 7: Generate Demo Data (Optional)"
+
+    echo "Generate synthetic banking data for the demo?"
+    echo "  • Customer master data (200 Spanish customers)"
+    echo "  • Banking accounts (400+ accounts)"
+    echo "  • Transactions (1000+ EUR transactions)"
+    echo "  • Digital interactions (800+ events)"
+    echo ""
+
+    read -p "Generate demo data now? [Y/n]: " generate
+    generate=${generate:-Y}
+
+    if [[ "$generate" =~ ^[Yy]$ ]]; then
+        log_info "Running data generation script..."
+        "$SCRIPT_DIR/generate-data.sh"
+    else
+        log_info "Skipping data generation"
+        echo ""
+        log_info "You can generate data later by running:"
+        echo "  cd $SCRIPT_DIR"
+        echo "  ./generate-data.sh"
+        echo ""
+    fi
+}
+
+# ============================================================================
+# Step 8: Validate Setup
 # ============================================================================
 validate_setup() {
     log_section "Step 7: Validating Setup"
@@ -417,14 +446,19 @@ display_next_steps() {
     echo '     - Ask: "List my Kafka topics"'
     echo "     - .mcp.json already configured for project-level MCP!"
     echo ""
-    echo "  2. (Optional) Configure other Claude Code environments:"
+    echo "  2. Generate demo data (if not done already):"
+    echo "     ./generate-data.sh"
+    echo "     - Creates 200 customers, 400+ accounts, 1000+ transactions"
+    echo "     - Realistic Spanish names, EUR currency, MCC codes"
+    echo ""
+    echo "  3. (Optional) Configure other Claude Code environments:"
     echo "     ./configure-claude-mcp.sh --vscode    # VS Code global settings"
     echo "     ./configure-claude-mcp.sh --desktop   # Claude Desktop app"
     echo ""
-    echo "  3. Start building your Customer 360 demo!"
-    echo "     - Create topics"
-    echo "     - Set up schemas"
+    echo "  4. Start building your Customer 360 demo!"
+    echo "     - Explore topics and schemas with Claude MCP"
     echo "     - Write Flink SQL queries"
+    echo "     - Create customer_360_snapshot data product"
     echo ""
 
     echo -e "${CYAN}📚 Documentation:${NC}"
@@ -460,7 +494,9 @@ main() {
     echo "  3. Deploy Kafka cluster + Flink compute pool"
     echo "  4. Provision Confluent MCP server"
     echo "  5. Configure MCP with your cluster credentials"
-    echo "  6. Validate the complete setup"
+    echo "  6. Create project MCP configuration"
+    echo "  7. Generate demo data (optional)"
+    echo "  8. Validate the complete setup"
     echo ""
 
     read -p "Continue? [Y/n]: " confirm
@@ -476,6 +512,7 @@ main() {
     provision_mcp_server
     configure_mcp_credentials
     create_project_mcp_config
+    generate_demo_data
     validate_setup
     display_next_steps
 }

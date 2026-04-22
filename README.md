@@ -10,17 +10,18 @@ Minimal checklist to implement the live demo: **Customer 360 data product on Con
 - Confluent MCP server configured and working
 - Kafka cluster running: `customer-360-cluster` (lkc-jq5kwq, AWS eu-west-1)
 - Flink compute pool ready
+- Kafka topics created (automated via Terraform)
+- Avro schemas defined
+- Synthetic data generators ready (Spanish banking data)
 - Environment protection (.gitignore consolidated)
 
 **🚧 In Progress:**
 
-- Creating Kafka topics and schemas
-- Generating synthetic data
 - Building Flink SQL transformations
+- Creating `customer_360_snapshot` data product
 
 **⏳ To Do:**
 
-- Create `customer_360_snapshot` data product
 - (Optional) Configure Tableflow integration
 
 ---
@@ -67,21 +68,40 @@ See [environment/terraform-confluent-aws/README.md](environment/terraform-conflu
 
 ### 2.1 Kafka & Schema Registry
 
-After infrastructure is provisioned, create topics and schemas:
+**Kafka topics** are automatically created by Terraform (`terraform-confluent-aws/topics.tf`):
 
-- **Kafka topics** (example names):
-  - `corebank.customers`
-  - `corebank.accounts`
-  - `corebank.transactions`
-  - `digital.interactions`
+- `corebank.customers` - Customer master data (compacted, Avro)
+- `corebank.accounts` - Account information (compacted, Avro)
+- `corebank.transactions` - Transaction events (30-day retention, Avro)
+- `digital.interactions` - Digital channel interactions (30-day retention, **Plain JSON - schemaless**)
 
-- **Schemas** registered in Schema Registry:
-  - `customers`: `customer_id`, `name`, `segment`, `risk_band`, `relationship_manager`, ...
-  - `accounts`: `account_id`, `customer_id`, `product_type`, `status`, ...
-  - `transactions`: `txn_id`, `account_id`, `amount`, `currency`, `mcc`, `channel`, `ts`, ...
-  - `interactions`: `event_id`, `customer_id`, `event_type`, `ts`, `channel`, ...
+**Schemas:**
 
-Populate topics with **realistic synthetic data**.
+Avro schemas for customers, accounts, and transactions are auto-registered with Schema Registry:
+
+- `customers`: `customer_id`, `full_name`, `segment`, `risk_band`, `relationship_manager`, `email`, `phone`, `created_at`
+- `accounts`: `account_id`, `customer_id`, `product_type`, `status`, `balance`, `currency`, `opened_at`
+- `transactions`: `txn_id`, `account_id`, `amount`, `currency`, `mcc`, `merchant_name`, `channel`, `ts`
+
+The `digital.interactions` topic uses **plain JSON** (no Schema Registry) to demonstrate **Flink's schema inference capability**:
+
+- `interactions` (JSON): `event_id`, `customer_id`, `event_type`, `channel`, `session_id`, `ts`
+
+**Generate realistic synthetic data:**
+
+```bash
+cd environment
+./generate-data.sh
+```
+
+This creates realistic Spanish banking data:
+
+- 200 customers (Spanish names, segments, risk bands)
+- 400+ accounts (checking, savings, credit cards, mortgages)
+- 1,000+ transactions (Spanish merchants, EUR currency, MCC codes)
+- 800+ digital interactions (login, transfers, payments)
+
+See [environment/data-generation/README.md](environment/data-generation/README.md) for details.
 
 ### 2.2 Flink
 
@@ -250,19 +270,53 @@ Flink table + backing topic (upsert):
   - Claude Code installed and configured with MCP support.
   - Custom MCP server (`confluent-mcp`) reachable from the machine running Claude Code.
 
-- **Misc utilities**
-  - Optional Kafka/CLI client for debugging.
-  - Synthetic data generator (your own script or existing tools).
+- **Python 3.8+**
+  - Required for data generation scripts
+  - Included dependencies: confluent-kafka, faker, python-dotenv
 
 ---
 
 ## 6. Practical Next Steps
 
-1. Stand up the minimum Confluent environment (topics + Flink).
-2. Implement and test the MCP server with **one simple flow** (list topics + run a trivial `SELECT` in Flink).
-3. Once that works, add:
-   - Customer 360 SQL
-   - Iteration with Claude
-   - (Optional) Tableflow
+### Quick Start (Automated)
 
-This should be enough to remind you **what to build** and **which pieces you need** when you start the actual implementation.
+```bash
+# 1. Bootstrap complete environment
+cd environment
+./bootstrap.sh
+# This will:
+#   - Deploy Kafka cluster + Flink pool
+#   - Provision MCP server
+#   - Create topics
+#   - Generate synthetic data (optional, prompted)
+
+# 2. Test MCP integration in Claude Code
+# Ask: "List my Kafka topics"
+# Ask: "Sample records from corebank.customers"
+
+# 3. Start building with Claude
+# Ask Claude to:
+#   - Explore the data and schemas
+#   - Design the customer_360_snapshot schema
+#   - Generate Flink SQL DDL and aggregations
+```
+
+### Manual Steps (if needed)
+
+1. **Infrastructure**: `cd environment/terraform-confluent-aws && terraform apply`
+2. **MCP Setup**: `cd environment/mcp-confluent && ./provision-confluent-mcp.sh`
+3. **Generate Data**: `cd environment && ./generate-data.sh`
+4. **Test**: Ask Claude to list topics and sample data
+
+### Building the Customer 360 Data Product
+
+Once infrastructure and data are ready:
+
+1. **Explore** with Claude + MCP: "Analyze the schemas for all topics"
+2. **Design**: Ask Claude to propose the `customer_360_snapshot` schema
+3. **Generate DDL**: Have Claude create Flink SQL table definitions
+4. **Build aggregations**: Claude generates the `INSERT INTO ... SELECT` query
+5. **Debug**: Share any Flink errors with Claude for fixes
+6. **Validate**: Run `SELECT * FROM customer_360_snapshot LIMIT 10`
+
+See [environment/data-generation/README.md](environment/data-generation/README.md) for data details.

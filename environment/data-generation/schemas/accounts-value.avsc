@@ -1,0 +1,55 @@
+{
+  "type": "record",
+  "name": "Account",
+  "namespace": "com.example.corebank",
+  "doc": "Banking account information",
+  "fields": [
+    {
+      "name": "account_id",
+      "type": "string",
+      "doc": "Unique account identifier"
+    },
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Reference to customer owner"
+    },
+    {
+      "name": "product_type",
+      "type": {
+        "type": "enum",
+        "name": "ProductType",
+        "symbols": ["CHECKING", "SAVINGS", "CREDIT_CARD", "MORTGAGE", "INVESTMENT"]
+      },
+      "doc": "Type of banking product"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "AccountStatus",
+        "symbols": ["ACTIVE", "DORMANT", "CLOSED"]
+      },
+      "doc": "Current account status"
+    },
+    {
+      "name": "balance",
+      "type": "double",
+      "doc": "Current account balance"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "default": "EUR",
+      "doc": "Account currency (ISO 4217)"
+    },
+    {
+      "name": "opened_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Account opening timestamp"
+    }
+  ]
+}

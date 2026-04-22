@@ -1,0 +1,56 @@
+{
+  "type": "record",
+  "name": "Transaction",
+  "namespace": "com.example.corebank",
+  "doc": "Banking transaction event",
+  "fields": [
+    {
+      "name": "txn_id",
+      "type": "string",
+      "doc": "Unique transaction identifier"
+    },
+    {
+      "name": "account_id",
+      "type": "string",
+      "doc": "Reference to source account"
+    },
+    {
+      "name": "amount",
+      "type": "double",
+      "doc": "Transaction amount (positive for credit, negative for debit)"
+    },
+    {
+      "name": "currency",
+      "type": "string",
+      "default": "EUR",
+      "doc": "Transaction currency (ISO 4217)"
+    },
+    {
+      "name": "mcc",
+      "type": "string",
+      "doc": "Merchant Category Code"
+    },
+    {
+      "name": "merchant_name",
+      "type": "string",
+      "doc": "Merchant or counterparty name"
+    },
+    {
+      "name": "channel",
+      "type": {
+        "type": "enum",
+        "name": "TransactionChannel",
+        "symbols": ["ATM", "POS", "ONLINE", "MOBILE"]
+      },
+      "doc": "Transaction origination channel"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Transaction timestamp"
+    }
+  ]
+}

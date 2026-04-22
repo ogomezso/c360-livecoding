@@ -136,3 +136,55 @@ resource "confluent_role_binding" "customer_360_env_admin" {
   role_name   = "EnvironmentAdmin"
   crn_pattern = confluent_environment.customer_360.resource_name
 }
+
+# Get Schema Registry cluster for this environment
+data "confluent_schema_registry_cluster" "customer_360" {
+  environment {
+    id = confluent_environment.customer_360.id
+  }
+
+  depends_on = [
+    confluent_kafka_cluster.customer_360
+  ]
+}
+
+# Grant ResourceOwner role to the service account on Schema Registry subjects
+resource "confluent_role_binding" "customer_360_schema_registry_resource_owner" {
+  principal   = "User:${confluent_service_account.customer_360_app.id}"
+  role_name   = "ResourceOwner"
+  crn_pattern = "${data.confluent_schema_registry_cluster.customer_360.resource_name}/subject=*"
+
+  depends_on = [
+    data.confluent_schema_registry_cluster.customer_360
+  ]
+}
+
+# Create API Key for Schema Registry
+resource "confluent_api_key" "customer_360_schema_registry_api_key" {
+  display_name = "customer-360-schema-registry-api-key"
+  description  = "Schema Registry API Key for Customer 360 application"
+
+  owner {
+    id          = confluent_service_account.customer_360_app.id
+    api_version = confluent_service_account.customer_360_app.api_version
+    kind        = confluent_service_account.customer_360_app.kind
+  }
+
+  managed_resource {
+    id          = data.confluent_schema_registry_cluster.customer_360.id
+    api_version = data.confluent_schema_registry_cluster.customer_360.api_version
+    kind        = data.confluent_schema_registry_cluster.customer_360.kind
+
+    environment {
+      id = confluent_environment.customer_360.id
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = false
+  }
+
+  depends_on = [
+    confluent_role_binding.customer_360_schema_registry_resource_owner
+  ]
+}

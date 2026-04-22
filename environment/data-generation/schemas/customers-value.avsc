@@ -1,0 +1,60 @@
+{
+  "type": "record",
+  "name": "Customer",
+  "namespace": "com.example.corebank",
+  "doc": "Customer master data for retail banking",
+  "fields": [
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Unique customer identifier"
+    },
+    {
+      "name": "full_name",
+      "type": "string",
+      "doc": "Customer full name"
+    },
+    {
+      "name": "segment",
+      "type": {
+        "type": "enum",
+        "name": "CustomerSegment",
+        "symbols": ["RETAIL", "PREMIER", "PRIVATE"]
+      },
+      "doc": "Customer segment classification"
+    },
+    {
+      "name": "risk_band",
+      "type": {
+        "type": "enum",
+        "name": "RiskBand",
+        "symbols": ["LOW", "MEDIUM", "HIGH"]
+      },
+      "doc": "Risk classification"
+    },
+    {
+      "name": "relationship_manager",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Assigned relationship manager (premier/private only)"
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "doc": "Customer email address"
+    },
+    {
+      "name": "phone",
+      "type": "string",
+      "doc": "Customer phone number"
+    },
+    {
+      "name": "created_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Account creation timestamp"
+    }
+  ]
+}
