@@ -149,13 +149,20 @@ output "confluent_cloud_console_urls" {
 
 # Export for MCP server configuration
 output "mcp_server_env_config" {
-  description = "Environment variables for MCP server configuration"
+  description = "Environment variables for MCP server configuration - Complete setup for ALL MCP tools"
   value = <<-EOT
-    # Confluent Cloud Management Plane
+    # ============================================================================
+    # CONFLUENT CLOUD API CREDENTIALS (Management Plane)
+    # ============================================================================
+    # Required for: Tag management, Catalog, Administrative operations
     CONFLUENT_CLOUD_API_KEY=${var.confluent_cloud_api_key}
     CONFLUENT_CLOUD_API_SECRET=${var.confluent_cloud_api_secret}
+    CONFLUENT_CLOUD_REST_ENDPOINT=https://api.confluent.cloud
 
-    # Kafka Cluster (Data Plane)
+    # ============================================================================
+    # KAFKA CLUSTER CONFIGURATION (Data Plane)
+    # ============================================================================
+    # Required for: Topic operations, Message production/consumption
     KAFKA_API_KEY=${confluent_api_key.customer_360_kafka_api_key.id}
     KAFKA_API_SECRET=${confluent_api_key.customer_360_kafka_api_key.secret}
     KAFKA_CLUSTER_ID=${confluent_kafka_cluster.customer_360.id}
@@ -163,19 +170,110 @@ output "mcp_server_env_config" {
     KAFKA_ENV_ID=${confluent_environment.customer_360.id}
     BOOTSTRAP_SERVERS=${replace(confluent_kafka_cluster.customer_360.bootstrap_endpoint, "SASL_SSL://", "")}
 
-    # Flink Compute Pool
+    # ============================================================================
+    # SCHEMA REGISTRY CONFIGURATION
+    # ============================================================================
+    # Required for: Schema operations, Tag tools, Catalog
+    # Note: Exporting both ENDPOINT and URL for compatibility with different tools
+    SCHEMA_REGISTRY_ENDPOINT=${data.confluent_schema_registry_cluster.customer_360.rest_endpoint}
+    SCHEMA_REGISTRY_URL=${data.confluent_schema_registry_cluster.customer_360.rest_endpoint}
+    SCHEMA_REGISTRY_API_KEY=${confluent_api_key.customer_360_schema_registry_api_key.id}
+    SCHEMA_REGISTRY_API_SECRET=${confluent_api_key.customer_360_schema_registry_api_key.secret}
+
+    # ============================================================================
+    # FLINK CONFIGURATION
+    # ============================================================================
+    # Required for: Flink SQL, Flink Catalog, Flink Diagnostics tools
     FLINK_API_KEY=${confluent_api_key.customer_360_flink_api_key.id}
     FLINK_API_SECRET=${confluent_api_key.customer_360_flink_api_key.secret}
     FLINK_COMPUTE_POOL_ID=${confluent_flink_compute_pool.customer_360.id}
     FLINK_CLOUD=${var.cluster_cloud}
     FLINK_REGION=${var.cluster_region}
+    FLINK_ENV_ID=${confluent_environment.customer_360.id}
+    FLINK_ORG_ID=${local.org_id}
+    FLINK_REST_ENDPOINT=${data.confluent_flink_region.customer_360.rest_endpoint}
+    FLINK_ENV_NAME=${var.environment_display_name}
+    FLINK_DATABASE_NAME=${confluent_kafka_cluster.customer_360.id}
+    FLINK_CATALOG_NAME=default_catalog
 
-    # Schema Registry
-    SCHEMA_REGISTRY_URL=${data.confluent_schema_registry_cluster.customer_360.rest_endpoint}
-    SCHEMA_REGISTRY_API_KEY=${confluent_api_key.customer_360_schema_registry_api_key.id}
-    SCHEMA_REGISTRY_API_SECRET=${confluent_api_key.customer_360_schema_registry_api_key.secret}
+    # ============================================================================
+    # CONNECTORS CONFIGURATION
+    # ============================================================================
+    # Required for: Connector management tools
+    CONNECTORS_ENDPOINT=${confluent_kafka_cluster.customer_360.rest_endpoint}
+    CONNECTORS_API_KEY=${confluent_api_key.customer_360_kafka_api_key.id}
+    CONNECTORS_API_SECRET=${confluent_api_key.customer_360_kafka_api_key.secret}
+
+    # ============================================================================
+    # TABLEFLOW CONFIGURATION
+    # ============================================================================
+    # Required for: Tableflow topic management and catalog integration tools
+    # Tableflow uses the same Kafka cluster API credentials
+    TABLEFLOW_API_KEY=${confluent_api_key.customer_360_kafka_api_key.id}
+    TABLEFLOW_API_SECRET=${confluent_api_key.customer_360_kafka_api_key.secret}
+    TABLEFLOW_CATALOG_NAME=default_catalog
+
+    # ============================================================================
+    # TELEMETRY/METRICS CONFIGURATION
+    # ============================================================================
+    # Required for: Metrics querying and monitoring tools
+    TELEMETRY_ENDPOINT=https://api.telemetry.confluent.cloud
+    TELEMETRY_API_KEY=${var.confluent_cloud_api_key}
+    TELEMETRY_API_SECRET=${var.confluent_cloud_api_secret}
+
+    # ============================================================================
+    # MCP SERVER CONFIGURATION
+    # ============================================================================
+    # Server runtime settings
+    MCP_TRANSPORT=stdio
+    LOG_LEVEL=info
+    DO_NOT_TRACK=false
   EOT
   sensitive = true
+}
+
+# MCP Tools Status
+output "mcp_tools_status" {
+  description = "Status of available MCP tools based on configuration"
+  value = <<-EOT
+    ✅ ENABLED MCP Tools (configured and ready):
+
+    📊 Kafka & Topics (6 tools)
+       - list-topics, create-topics, delete-topics
+       - produce-message, consume-messages
+       - get-topic-config, alter-topic-config
+
+    🏷️  Tags & Catalog (7 tools)
+       - add-tags-to-topic, create-topic-tags, delete-tag
+       - list-tags, remove-tag-from-entity
+       - search-topics-by-name, search-topics-by-tag
+
+    🔧 Flink SQL & Catalog (10+ tools)
+       - create-flink-statement, list-flink-statements
+       - list-flink-catalogs, list-flink-databases, list-flink-tables
+       - describe-flink-table, get-flink-table-info
+       - check-flink-statement-health, detect-flink-statement-issues
+
+    🔌 Connectors (4 tools)
+       - list-connectors, read-connector
+       - create-connector, delete-connector
+
+    📋 Schema Registry (2 tools)
+       - list-schemas, delete-schema
+
+    🌍 Environments & Clusters (3 tools)
+       - list-environments, read-environment, list-clusters
+
+    📈 Metrics & Billing (3 tools)
+       - query-metrics, list-available-metrics, list-billing-costs
+
+    📊 Tableflow & Catalog (10+ tools)
+       - create-tableflow-topic, list-tableflow-topics, read-tableflow-topic
+       - create-tableflow-catalog-integration, list-tableflow-catalog-integrations
+       - update-tableflow-topic, delete-tableflow-topic, list-tableflow-regions
+
+    Total: 45+ tools enabled and ready to use!
+  EOT
 }
 
 # Next steps
@@ -188,9 +286,11 @@ output "next_steps" {
     1. View your environment: https://confluent.cloud/environments/${confluent_environment.customer_360.id}
     2. Access Kafka cluster: https://confluent.cloud/environments/${confluent_environment.customer_360.id}/clusters/${confluent_kafka_cluster.customer_360.id}
     3. Open Flink console: https://confluent.cloud/environments/${confluent_environment.customer_360.id}/flink
-    4. Export MCP configuration:
-       terraform output -raw mcp_server_env_config >> ~/.confluent-mcp/.env
-    5. Create topics for Customer 360 demo (see ../data-setup/README.md)
+    4. Configure MCP Server:
+       terraform output -raw mcp_server_env_config > ~/.confluent-mcp/.env
+       (or run: cd ../.. && ./environment/reconfigure-mcp.sh)
+    5. Restart Claude Code to load ALL MCP tools
+    6. Check tool status: terraform output mcp_tools_status
 
     💡 Tip: Use 'terraform output -json' to get all outputs in JSON format
   EOT

@@ -32,7 +32,7 @@ cd terraform-confluent-aws
 cp terraform.tfvars.example terraform.tfvars
 vim terraform.tfvars  # Add your Confluent Cloud API keys
 
-# Deploy (5-10 minutes)
+# Deploy
 make init
 make apply
 
@@ -43,7 +43,7 @@ terraform apply
 
 **What gets created:**
 - ✅ Confluent Cloud Environment
-- ✅ Enterprise Kafka Cluster (AWS eu-west-1, Multi-Zone, 2 CKUs)
+- ✅ Standard Kafka Cluster (AWS eu-west-1, Multi-Zone, auto-scaling 0-10 eCKUs)
 - ✅ Flink Compute Pool (Serverless, 0-10 CFUs)
 - ✅ Service Account with RBAC roles
 - ✅ Kafka and Flink API Keys
@@ -137,7 +137,7 @@ cd ../mcp-confluent
 | Resource Type | Count | Purpose |
 |--------------|-------|---------|
 | Environment | 1 | Isolated workspace |
-| Kafka Cluster | 1 | Enterprise, Multi-AZ |
+| Kafka Cluster | 1 | Standard, Multi-AZ |
 | Flink Compute Pool | 1 | Serverless processing |
 | Service Account | 1 | Application identity |
 | API Keys | 2 | Kafka + Flink access |
@@ -152,22 +152,6 @@ cd ../mcp-confluent
 | Flink | `execute_flink_sql`, `list_statements` |
 | Management | `create_environment`, `create_cluster` |
 
-## 💰 Cost Estimate
-
-**AWS eu-west-1 (Ireland)**
-
-| Component | Configuration | Monthly Cost |
-|-----------|---------------|--------------|
-| Enterprise Cluster | 2 CKUs, Multi-Zone | ~$1,000 |
-| Flink Pool | 0-10 CFUs (serverless) | ~$0.36/CFU-hour when active |
-| Schema Registry | Included with cluster | $0 |
-
-**💡 Cost Optimization Tips:**
-- Flink auto-scales to 0 when idle ($0 cost)
-- Use SINGLE_ZONE for dev/test (~50% savings)
-- Reduce CKUs to 1 for development
-- Destroy infrastructure when not in use
-
 ## 🎯 Typical Workshop Flow
 
 ### Day Before Workshop
@@ -175,7 +159,7 @@ cd ../mcp-confluent
 ```bash
 # 1. Provision infrastructure
 cd terraform-confluent-aws
-make full-deploy  # ~10 minutes
+make full-deploy
 
 # 2. Set up MCP server
 cd ../mcp-confluent
@@ -243,7 +227,6 @@ npx -y @confluentinc/mcp-confluent \
 
 - **Terraform Setup**: [terraform-confluent-aws/README.md](terraform-confluent-aws/README.md)
 - **MCP Server Setup**: [mcp-confluent/README.md](mcp-confluent/README.md)
-- **MCP Examples**: [mcp-confluent/examples/README.md](mcp-confluent/examples/README.md)
 - **Main Workshop**: [../README.md](../README.md)
 
 ## 🐛 Troubleshooting

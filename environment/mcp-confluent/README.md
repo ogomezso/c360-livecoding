@@ -11,13 +11,6 @@ This directory contains a complete automated provisioning solution for the [Conf
 | [`provision-confluent-mcp.sh`](./provision-confluent-mcp.sh) | Main provisioning script - sets up everything |
 | [`test-mcp-server.sh`](./test-mcp-server.sh) | Comprehensive test suite to validate your setup |
 
-### Documentation
-
-| Document | Description |
-|----------|-------------|
-| [`CONFLUENT_MCP_SETUP.md`](./CONFLUENT_MCP_SETUP.md) | Complete setup guide with troubleshooting |
-| [`examples/README.md`](./examples/README.md) | Configuration examples and common scenarios |
-
 ### Example Configurations
 
 | File | Use Case |
@@ -246,12 +239,34 @@ cat ~/.confluent-mcp/.env | grep -E "API_KEY|API_SECRET"
 ### Issue: Node.js version error
 
 **Solution:**
-```bash
-# Install Node.js 18+
-nvm install 18
-nvm use 18
 
-# Or download from https://nodejs.org/
+Install Node.js 18 or later using your preferred method:
+
+**Option 1: Direct Download (All OS)**
+- Download from https://nodejs.org/
+- Choose the LTS version (18.x or higher)
+
+**Option 2: Package Managers**
+```bash
+# macOS (Homebrew)
+brew install node@18
+
+# Ubuntu/Debian
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Windows (Chocolatey)
+choco install nodejs-lts
+
+# Or use version managers (optional):
+# nvm (macOS/Linux): nvm install 18 && nvm use 18
+# nvm-windows: nvm install 18.0.0 && nvm use 18.0.0
+```
+
+**Verify installation:**
+```bash
+node --version  # Should show v18.x.x or higher
+npm --version
 ```
 
 ### Issue: Authentication failed
@@ -267,8 +282,6 @@ source ~/.confluent-mcp/.env
 curl -u "$CONFLUENT_CLOUD_API_KEY:$CONFLUENT_CLOUD_API_SECRET" \
   https://api.confluent.cloud/org/v2/environments
 ```
-
-See [CONFLUENT_MCP_SETUP.md](./CONFLUENT_MCP_SETUP.md) for complete troubleshooting guide.
 
 ## 📝 Files Created by Provisioning Script
 
@@ -346,7 +359,6 @@ The Confluent MCP Server itself is maintained by Confluent Inc.
 
 - **MCP Server Issues**: https://github.com/confluentinc/mcp-confluent/issues
 - **Confluent Community**: https://forum.confluent.io/
-- **Documentation**: See [CONFLUENT_MCP_SETUP.md](./CONFLUENT_MCP_SETUP.md)
 
 ---
 

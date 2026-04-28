@@ -22,7 +22,7 @@ This Terraform configuration automatically provisions a complete Confluent Cloud
 - **Flink Pool**: Serverless, max 10 CFUs (auto-scales from 0)
 - **Availability**: Multi-zone for 99.99% SLA
 - **Networking**: Public endpoints (accessible from local MCP server)
-- **Cost Model**: Pay only for what you use (elastic scaling)
+- **Scaling**: Elastic auto-scaling (pay only for what you use)
 
 ## 🚀 Quick Start
 
@@ -138,12 +138,6 @@ terraform apply
 ```
 
 Type `yes` when prompted.
-
-**Deployment time**: ~5-10 minutes
-- Environment: ~10 seconds
-- Kafka Cluster: ~3-5 minutes
-- Flink Pool: ~2-3 minutes
-- API Keys & RBAC: ~1 minute
 
 #### 5. Verify Deployment
 
@@ -287,35 +281,12 @@ flink_max_cfu = 20  # Max CFUs (auto-scales from 0)
 ### Single vs Multi-Zone
 
 ```hcl
-# For cost savings (99.5% SLA)
+# For development/testing (99.5% SLA)
 cluster_availability = "SINGLE_ZONE"
 
 # For production (99.99% SLA - requires 2+ eCKU minimum)
 cluster_availability = "MULTI_ZONE"
 ```
-
-## 💰 Cost Estimation
-
-### Approximate Monthly Costs (AWS eu-west-1)
-
-| Resource | Configuration | Estimated Cost |
-|----------|--------------|----------------|
-| Standard Cluster | 0-10 eCKU, Multi-Zone | Pay per eCKU-hour used (~$0.16/eCKU-hour) |
-| Flink Compute Pool | 0-10 CFUs (serverless) | ~$0.36/CFU-hour when active |
-| Data Transfer | Depends on usage | Variable |
-
-**Standard Cluster Cost Model:**
-- **Elastic**: Auto-scales from 0-10 eCKU based on actual usage
-- **No minimum**: $0 when cluster is idle (no topics, no data)
-- **Pay as you go**: Only charged for eCKU actually consumed
-- **Example**: 2 eCKU for 24 hours = 2 × 24 × $0.16 = ~$7.68/day
-
-**Flink Cost Example:**
-- 10 CFUs running 24/7: ~$2,600/month
-- 10 CFUs running 8 hours/day: ~$865/month
-- Auto-scales to 0 when idle: $0/month (when not in use)
-
-**💡 Tip**: Standard clusters are perfect for demos and variable workloads - you only pay for what you use!
 
 ## 🧹 Cleanup
 
@@ -412,7 +383,7 @@ rm .terraform.tfstate.lock.info
 
 **Solution**:
 ```bash
-# Wait a few minutes and retry
+# Wait and retry
 sleep 60 && terraform apply
 
 # Use -parallelism flag to reduce concurrent operations

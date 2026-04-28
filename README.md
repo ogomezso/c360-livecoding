@@ -1,196 +1,145 @@
-# Customer 360 Live Coding Workshop – Implementation Notes
+# Customer 360 Real-Time Data Product with Confluent & Claude Code
 
-Minimal checklist to implement the live demo: **Customer 360 data product on Confluent DSP using Flink + Claude Code (via MCP)**.
+> **Build a complete real-time Customer 360 data product using natural language with Claude Code + Confluent MCP**
 
-## 📊 Current Status
+This project demonstrates how to build a production-grade **Customer 360 real-time data product** on Confluent Cloud using **Apache Flink SQL** and **Claude Code with MCP (Model Context Protocol)** integration.
 
-**✅ Completed:**
-
-- Infrastructure provisioned (Terraform)
-- Confluent MCP server configured and working
-- Kafka cluster running: `customer-360-cluster` (lkc-jq5kwq, AWS eu-west-1)
-- Flink compute pool ready
-- Kafka topics created (automated via Terraform)
-- Avro schemas defined
-- Synthetic data generators ready (Spanish banking data)
-- Environment protection (.gitignore consolidated)
-
-**🚧 In Progress:**
-
-- Building Flink SQL transformations
-- Creating `customer_360_snapshot` data product
-
-**⏳ To Do:**
-
-- (Optional) Configure Tableflow integration
+Instead of writing SQL manually, you'll use natural language prompts with Claude Code to explore data, design schemas, generate Flink SQL, and build streaming aggregations—all through conversation.
 
 ---
 
-## 1. Goal
+## 🎯 What is Customer 360?
 
-Build a `customer_360_snapshot` data product in (near) real time that aggregates key information per customer for a retail bank:
+**Customer 360** is a unified, real-time view of each customer that consolidates data from multiple systems into a single, queryable snapshot. For banks and financial services, this means:
 
-- Customer identity and segment
-- Associated products/accounts
-- Transaction activity (last 30 days)
-- Digital activity (channels / last login)
-- Basic risk/fraud signals (optional)
+### Business Value
 
-Claude Code should help to:
+- **Single Source of Truth**: All customer data in one place—profile, accounts, transactions, digital activity
+- **Real-Time Insights**: Updates within seconds as customers interact across channels
+- **Personalized Experiences**: Instant access to complete customer context for service reps, mobile apps, and marketing
+- **Risk Management**: Real-time fraud detection and credit risk assessment
+- **Cross-Sell Opportunities**: Identify product gaps based on customer segment and behavior
 
-- Understand the datasets (topics, schemas, samples)
-- Design the data product schema
-- Generate and debug the Flink SQL
+### Use Cases
+
+1. **Customer Service**: Service reps see complete customer history instantly when answering calls
+2. **Personalization**: Mobile apps show relevant offers based on current balance, segment, and recent activity
+3. **Fraud Detection**: Real-time anomaly detection across transactions and digital behavior
+4. **Marketing Campaigns**: Target customers based on product ownership, spending patterns, and engagement
+5. **Risk Scoring**: Continuous credit risk assessment using transaction velocity and account balances
+
+### Traditional Challenges
+
+Building Customer 360 traditionally requires:
+- Writing complex SQL joins across multiple databases
+- Managing data pipelines and ETL processes
+- Handling schema changes and data quality
+- Maintaining low latency (<1 second) for real-time updates
+- Expertise in stream processing frameworks
+
+**This demo shows how Claude Code + Confluent MCP makes this dramatically simpler.**
 
 ---
 
-## 2. DSP Setup (Confluent)
+## 🏗️ What You'll Build
 
-**⚡ Automated Setup Available!** Use Terraform to provision the entire Confluent Cloud infrastructure:
+A real-time **`c360_snapshot`** topic that aggregates data from 4 source topics:
+
+### Source Data
+
+| Topic | Data | Retention |
+|-------|------|-----------|
+| `corebank.customers` | Customer profiles (segment, risk, contact info) | Infinite (compacted) |
+| `corebank.accounts` | Account details (balance, product type, status) | Infinite (compacted) |
+| `corebank.transactions` | Transaction history (amount, merchant, channel) | 30 days |
+| `digital.interactions.avro` | Digital events (login, transfer, payment) | 30 days |
+
+### Output: c360_snapshot
+
+A log-compacted topic with **37 fields per customer**, updated in real-time:
+
+**Customer Profile** (8 fields)
+- Name, segment (RETAIL/PREMIER/PRIVATE), risk band, relationship manager, contact info
+
+**Account Summary** (10 fields)
+- Total balance, account count, product ownership flags (checking, savings, investment, credit card, mortgage)
+
+**Transaction Metrics** (8 fields)
+- 30-day transaction count, total spent, total received, average amount, preferred channel
+
+**Digital Engagement** (9 fields)
+- Last 3 interactions (type, channel, timestamp), total logins, preferred digital channel
+
+**Real-Time Updates**: As customers make transactions, open accounts, or use digital channels, their snapshot updates within seconds.
+
+---
+
+## ✅ Prerequisites
+
+### Required Infrastructure
+
+- [ ] **Confluent Cloud Account** ([Sign up free](https://www.confluent.io/get-started/))
+- [ ] **Terraform** >= 1.5.0 ([Install](https://www.terraform.io/downloads))
+- [ ] **Node.js** >= 18 (for Confluent MCP server) ([Install](https://nodejs.org/))
+- [ ] **Claude Code** ([Download](https://claude.ai/code))
+- [ ] **Python 3.8+** (for synthetic data generation)
+
+### What Gets Deployed
+
+The automated setup provisions:
+
+✅ Confluent Cloud environment  
+✅ Standard Kafka cluster (AWS eu-west-1, multi-zone)  
+✅ Flink compute pool (serverless, 0-10 CFUs)  
+✅ Service account with proper RBAC  
+✅ Schema Registry  
+✅ 4 source topics with AVRO schemas  
+✅ Confluent MCP server configured  
+✅ Synthetic Spanish banking data
+
+---
+
+## 🚀 Quick Start
+
+### Step 1: Clone and Configure
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd c360-livecoding
+
+# Configure Confluent Cloud credentials
 cd environment/terraform-confluent-aws
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your Confluent Cloud API credentials
-terraform init
-terraform apply
+nano terraform.tfvars  # Add your Confluent Cloud API key/secret
 ```
 
-See [environment/terraform-confluent-aws/README.md](environment/terraform-confluent-aws/README.md) for complete instructions.
+Get your API credentials at: https://confluent.cloud/settings/api-keys
 
-**What gets provisioned:**
-
-- ✅ Confluent Cloud Environment
-- ✅ Enterprise Kafka Cluster (AWS eu-west-1, Multi-Zone)
-- ✅ Flink Compute Pool (Serverless, 0-10 CFUs)
-- ✅ Service Account with proper RBAC roles
-- ✅ API Keys for Kafka and Flink
-- ✅ Schema Registry (included with cluster)
-
-### 2.1 Kafka & Schema Registry
-
-**Kafka topics** are automatically created by Terraform (`terraform-confluent-aws/topics.tf`):
-
-**Customer 360 Topics:**
-
-- `corebank.customers` - Customer master data (compacted, Avro)
-- `corebank.accounts` - Account information (compacted, Avro)
-- `corebank.transactions` - Transaction events (30-day retention, Avro)
-- `digital.interactions` - Digital channel interactions (30-day retention, **Plain JSON - schemaless**)
-
-**Additional Datagen Demo Topics:**
-
-- `clickstream` - Web analytics events (7-day retention, Avro, Datagen connector)
-- `orders` - E-commerce order events (30-day retention, Avro, Datagen connector)
-- `pageviews` - Marketing analytics events (7-day retention, Avro, Datagen connector)
-- `stock_trades` - Financial market events (7-day retention, Avro, Datagen connector)
-
-These Datagen topics provide additional demo scenarios beyond Customer 360. The connectors automatically generate realistic synthetic data using Confluent's quickstart templates.
-
-**Schemas:**
-
-Avro schemas for customers, accounts, and transactions are auto-registered with Schema Registry:
-
-- `customers`: `customer_id`, `full_name`, `segment`, `risk_band`, `relationship_manager`, `email`, `phone`, `created_at`
-- `accounts`: `account_id`, `customer_id`, `product_type`, `status`, `balance`, `currency`, `opened_at`
-- `transactions`: `txn_id`, `account_id`, `amount`, `currency`, `mcc`, `merchant_name`, `channel`, `ts`
-
-The `digital.interactions` topic uses **plain JSON** (no Schema Registry) to demonstrate **Flink's schema inference capability**:
-
-- `interactions` (JSON): `event_id`, `customer_id`, `event_type`, `channel`, `session_id`, `ts`
-
-**Generate realistic synthetic data:**
+### Step 2: Run Automated Setup
 
 ```bash
-cd environment
-./generate-data.sh
+# Return to project root
+cd ../..
+
+# Run the startup script
+./startup-demo.sh
 ```
 
-This creates realistic Spanish banking data:
+**What happens:**
+1. ✓ Detects first run and triggers bootstrap
+2. ✓ Deploys Kafka cluster + Flink compute pool (Terraform)
+3. ✓ Creates 4 source topics with AVRO schemas
+4. ✓ Configures Confluent MCP server for Claude Code
+5. ✓ Generates 2,000+ realistic Spanish banking records
+6. ✓ Shows infrastructure summary and Claude prompts
 
-- 200 customers (Spanish names, segments, risk bands)
-- 400+ accounts (checking, savings, credit cards, mortgages)
-- 1,000+ transactions (Spanish merchants, EUR currency, MCC codes)
-- 800+ digital interactions (login, transfers, payments)
+### Step 3: Configure Claude Code
 
-See [environment/data-generation/README.md](environment/data-generation/README.md) for details.
+Add Confluent MCP to your Claude Code settings:
 
-### 2.2 Flink
-
-The Terraform configuration automatically creates:
-
-- ✅ **Flink compute pool** (serverless, auto-scales 0-10 CFUs)
-- ✅ **Flink API key** with FlinkDeveloper role
-- ✅ Direct console access via output URLs
-
-Verify you can:
-
-- Run `SELECT * FROM <table> LIMIT 10;` using simple dynamic tables
-- Create tables and jobs from the Flink console
-- Access Flink SQL workspace at: `terraform output -raw confluent_cloud_console_urls | jq -r '.flink_console'`
-
-### 2.3 (Optional) Tableflow
-
-- Configure integration with S3/ADLS if you want to show materialization:
-  - A demo bucket/account
-  - At least one topic enabled with Tableflow to confirm it works
-
----
-
-## 3. MCP + Claude Code
-
-### 3.1 MCP Server (Confluent MCP)
-
-**⚡ Quick Setup:** This project includes automated provisioning scripts for the official Confluent MCP server!
-
-```bash
-cd environment/mcp-confluent
-./provision-confluent-mcp.sh
-```
-
-See [environment/mcp-confluent/README.md](environment/mcp-confluent/README.md) for complete setup instructions.
-
-The Confluent MCP server provides **50+ tools** including:
-
-**Kafka / schemas:**
-
-- `list_topics()`
-- `get_topic_schema(topic)`
-- `sample_records(topic, limit)`
-- `create_topic()`, `delete_topic()`
-- `produce_message()`, `consume_messages()`
-
-**Schema Registry:**
-
-- `register_schema()`, `list_schemas()`
-- `get_schema()`, `delete_schema()`
-
-**Flink SQL:**
-
-- `execute_flink_sql(statement)`
-- `list_flink_statements()`, `get_flink_statement()`
-- `create_flink_compute_pool()`, `list_flink_compute_pools()`
-
-**Cloud Management:**
-
-- `create_environment()`, `list_environments()`
-- `create_cluster()`, `list_clusters()`
-- `create_api_key()`, `delete_api_key()`
-
-**Tableflow:**
-
-- `create_tableflow_topic()`, `list_tableflow_topics()`
-
-The server:
-
-- Uses official Confluent Cloud APIs
-- Reads credentials from `.env` file
-- Handles errors and returns clear messages to Claude
-- Supports multiple transport modes (stdio, HTTP, SSE)
-
-### 3.2 Configuration in Claude Code
-
-After running the provisioning script, add to your Claude Code MCP settings:
+**macOS/Linux**: `~/.claude/settings.json`  
+**Windows**: `%APPDATA%\Claude\settings.json`
 
 ```json
 {
@@ -203,133 +152,645 @@ After running the provisioning script, add to your Claude Code MCP settings:
 }
 ```
 
-Or use npx directly:
+Restart Claude Code.
 
-```json
-{
-  "mcpServers": {
-    "confluent": {
-      "command": "npx",
-      "args": ["-y", "@confluentinc/mcp-confluent", "-e", "/path/to/.env"]
-    }
-  }
-}
+### Step 4: Verify Setup
+
+Open Claude Code and ask:
+
+```
+Can you list all my Kafka topics?
 ```
 
-Validate that from Claude you can call tools like:
+**Expected response**: Claude lists all topics including `corebank.customers`, `corebank.accounts`, `corebank.transactions`, `digital.interactions`.
 
-- `list_topics`
-- `get_topic_schema` on a test topic
-- `execute_flink_sql` with a simple `SELECT 1`
+✅ **You're ready to build!**
 
 ---
 
-## 4. What You Will Build in the Demo
+## 💬 Implementation Guide: Building Customer 360 with Claude
 
-### 4.1 Target schema: `customer_360_snapshot`
+This section shows the **actual conversation flow** used to build the Customer 360 data product. Copy these prompts into Claude Code and follow along.
 
-Flink table + backing topic (upsert):
+### Phase 1: Data Discovery
 
-- `customer_id` (logical PK)
-- `full_name`
-- `segment`, `risk_band`, `relationship_manager`
-- `num_accounts`
-- `products` (list of product types)
-- `thirty_day_txn_count`
-- `thirty_day_txn_amount`
-- `thirty_day_avg_ticket`
-- `preferred_channel`
-- `last_login_ts`
+**Prompt 1: Explore Topics**
+```
+Can you list all my Kafka topics?
+```
 
-### 4.2 Logical steps during live coding
+Claude will show all topics in your cluster.
 
-1. **Data exploration with Claude + MCP**
-   - Claude lists topics → inspects schemas → produces a mini data dictionary.
-   - Claude proposes the `customer_360_snapshot` schema (columns + source).
+**Prompt 2: Identify C360 Topics**
+```
+I'm implementing a Banking Customer 360 use case. 
+Can you list the related topics for me?
+```
 
-2. **DDL in Flink**
-   - Claude generates `CREATE TABLE` for the source tables (Kafka topics).
-   - Claude generates `CREATE TABLE` for `customer_360_snapshot` (upsert-kafka).
+Claude identifies the 4 C360 topics: `corebank.customers`, `corebank.accounts`, `corebank.transactions`, `digital.interactions`.
 
-3. **Aggregation/join logic**
-   - Claude generates the `INSERT INTO customer_360_snapshot ... SELECT ...` that:
-     - Joins customers + accounts + transactions + interactions.
-     - Computes 30-day metrics per customer.
+**Prompt 3: Detailed Analysis**
+```
+Can you give me a detailed view of the core banking and digital 
+banking topics? This should include topic config, schema, data 
+quality, and data samples.
+```
 
-4. **Execution and debugging**
-   - Run the statement in Flink SQL.
-   - If it fails, copy the error to Claude so it can adjust the SQL.
-   - Validate with `SELECT * FROM customer_360_snapshot LIMIT 10;`.
+Claude will:
+- Show topic configurations (partitions, retention, cleanup policy)
+- Display complete AVRO schemas
+- Consume and analyze sample messages
+- Assess data quality (completeness, validity, consistency)
+- Provide business insights from the data
 
-5. **(Optional) Tableflow**
-   - Enable Tableflow on the `customer_360_snapshot` topic.
-   - Briefly show how it would appear as an Iceberg/Delta table in the lakehouse.
+### Phase 2: Schema Enforcement
+
+**Prompt 4: Create AVRO Version**
+```
+Can you create a Flink query that replicates the digital.interactions 
+topic with the same exact configuration but enforcing an AVRO schema? 
+The query should replicate all new data that comes to the source topic.
+```
+
+Claude will:
+1. Create `digital.interactions.avro` topic with AVRO schema
+2. Generate Flink SQL to parse JSON and write AVRO
+3. Deploy the streaming pipeline
+4. Verify schema registration
+
+**Result**: Real-time JSON → AVRO transformation using Flink.
+
+### Phase 3: Data Governance
+
+**Prompt 5: Tag Topics**
+```
+Can you tag all primary topics with 'source' and 'c360' tags?
+```
+
+Claude creates tags and applies them to source topics for data governance.
+
+**Prompt 6: Tag Raw Data**
+```
+Can you tag digital.interactions as 'c360' and 'raw'?
+```
+
+Distinguishes raw JSON from schema-enforced version.
+
+**Prompt 7: View by Tags**
+```
+Can you list my topics ordered by tag?
+```
+
+Shows topics organized by governance tags.
+
+### Phase 4: Build C360 Snapshot
+
+**Prompt 8: Design and Implement**
+```
+Can you build a Dataset Analysis of the c360+source tagged topics 
+which includes topic configuration, data schema and sampling, business 
+insights and recommendations for building a c360_snapshot topic using 
+Flink that covers the c360 use case—real-time customer 360 data 
+including the last 3 digital interactions?
+```
+
+Claude will:
+1. Analyze all 4 source topics in detail
+2. Design comprehensive `c360_snapshot` schema (37 fields)
+3. Generate Flink SQL CREATE TABLE statement
+4. Generate complex INSERT SELECT with:
+   - Multi-way streaming joins
+   - Account aggregations (SUM, COUNT, product flags)
+   - ROW_NUMBER window function for Top-3 interactions
+   - Login metrics aggregation
+5. Provide implementation recommendations
+6. Show expected business outcomes
+
+**Prompt 9: Get Documentation**
+```
+Can you give me this as a markdown document?
+```
+
+Claude saves the complete analysis as `customer360_dataset_analysis.md`.
+
+**Prompt 10: Deploy**
+```
+OK, let's go! Implement the c360 snapshot for me.
+```
+
+Claude will:
+1. Create the `c360_snapshot` Kafka topic (12 partitions, log compacted, 90-day retention)
+2. Deploy Flink CREATE TABLE statement
+3. Deploy Flink INSERT SELECT statement (multi-way join + aggregations)
+4. Verify deployment and data flow
+5. Consume sample records to validate
+
+### Phase 5: Verify and Analyze
+
+**Prompt 11: List C360 Topics**
+```
+Can you list again my c360 related topics?
+```
+
+Shows all 6 topics: 4 source + 1 raw + 1 aggregated snapshot.
+
+**Prompt 12: Detailed Analysis**
+```
+Can you give me detailed information about the new c360_snapshot topic?
+```
+
+Claude provides:
+- Topic configuration (partitions, retention, compaction settings)
+- Complete AVRO schema (37 fields)
+- Sample data with real customer snapshots
+- Data quality assessment
+- Business insights from aggregated data
+- Use cases and operational recommendations
+
+### Phase 6: Tag the Data Product
+
+**Prompt 13: Tag C360 Snapshot**
+```
+Can you tag the c360_snapshot topic with 'c360' and 'data_product' tags?
+```
+
+Claude applies governance tags to mark this as a curated data product in the c360 domain.
+
+### Phase 7: Automate Future Deployments
+
+**Prompt 14: Generate Terraform**
+```
+Perfect! Can you create a Terraform script so I can reproduce this 
+new use case on different environments? This should be placed in a 
+different folder.
+```
+
+Claude creates:
+- Complete Terraform configuration in `environment/terraform-c360-snapshot/`
+- Variables for all configurable parameters
+- Comprehensive README with deployment guide
+- QUICKSTART for 5-minute deployment
+- Makefile for common operations
+- terraform.tfvars.example template
+
+**Result**: One-command deployment for dev/staging/prod environments.
 
 ---
 
-## 5. Tools and Prerequisites
+## 🏛️ Architecture: What Was Built
 
-- **Confluent Cloud**
-  - Kafka cluster, Schema Registry, Flink compute pool
-  - (Optional) Tableflow + external storage (S3/ADLS)
+### System Architecture
 
-- **Credentials**
-  - Confluent Cloud API key/secret with permissions to:
-    - Read topics and schemas
-    - Run Flink SQL
-    - (Optional) Configure Tableflow
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Source Systems (Spanish Bank)                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Core Banking    │  Account System  │  Transaction  │  Digital  │
+│  (Customers)     │  (Accounts)      │  Processing   │  Channels │
+└────────┬─────────┴────────┬─────────┴──────┬────────┴─────┬─────┘
+         │                  │                 │              │
+         ▼                  ▼                 ▼              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 Confluent Cloud - Kafka Cluster                  │
+│                   (AWS eu-west-1, Multi-Zone)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  📊 corebank.customers      │  📊 corebank.accounts            │
+│     - Compacted              │     - Compacted                   │
+│     - AVRO                   │     - AVRO                        │
+│     - 200 customers          │     - 400+ accounts               │
+├──────────────────────────────┼───────────────────────────────────┤
+│  📊 corebank.transactions   │  📊 digital.interactions         │
+│     - 30-day retention       │     - JSON (raw)                  │
+│     - AVRO                   │     - 30-day retention            │
+│     - 1,000+ transactions    │     - 800+ events                 │
+├──────────────────────────────┴───────────────────────────────────┤
+│  📊 digital.interactions.avro (Created by Flink)                │
+│     - AVRO (schema enforced)                                     │
+│     - Continuous JSON→AVRO transformation                        │
+└────────┬─────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Apache Flink on Confluent Cloud                     │
+│                  (Serverless Compute Pool)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  🔄 Flink Statement: populate-c360-snapshot                     │
+│                                                                  │
+│  SELECT (Multi-way Streaming Join):                             │
+│    ├─ corebank.customers (base)                                 │
+│    ├─ LEFT JOIN corebank.accounts (GROUP BY customer_id)        │
+│    │   └─ Aggregations: SUM(balance), COUNT(*), product flags   │
+│    ├─ LEFT JOIN digital.interactions.avro (ROW_NUMBER Top-3)    │
+│    │   └─ Last 3 interactions per customer                      │
+│    └─ LEFT JOIN digital.interactions.avro (GROUP BY)            │
+│        └─ Login metrics: COUNT(logins), MAX(last_login)         │
+│                                                                  │
+│  INSERT INTO c360_snapshot                                       │
+│    - Real-time updates (<1 second latency)                      │
+│    - Stateful aggregations with changelog mode                  │
+│    - Auto-scaling (0-10 CFUs based on load)                     │
+└────────┬────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    🎯 c360_snapshot Topic                        │
+│                   (Real-Time Customer 360)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  Configuration:                                                  │
+│    - 12 partitions (for high throughput)                        │
+│    - Log compacted (latest state per customer)                  │
+│    - 90-day retention                                            │
+│    - AVRO schema (37 fields)                                     │
+│    - Schema ID: 100010 (value), 100011 (key)                    │
+│                                                                  │
+│  Data per Customer:                                              │
+│    ✓ Profile: name, segment, risk, contact                      │
+│    ✓ Accounts: balance, count, product flags                    │
+│    ✓ Transactions: 30d metrics, spending patterns               │
+│    ✓ Digital: last 3 interactions, login counts                 │
+└────────┬────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Consumer Applications                         │
+├─────────────────────────────────────────────────────────────────┤
+│  📱 Mobile App        │  👤 Customer Service  │  🤖 ML Models   │
+│     - Personalization │     - 360° view       │     - Churn     │
+│     - Real-time offers│     - Context pop     │     - Fraud     │
+│                       │                       │     - Scoring   │
+│  📊 Analytics         │  🎯 Marketing         │  ⚠️  Alerts     │
+│     - Dashboards      │     - Segmentation    │     - Risk      │
+│     - Reporting       │     - Campaigns       │     - Anomalies │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-- **MCP + Claude**
-  - Claude Code installed and configured with MCP support.
-  - Custom MCP server (`confluent-mcp`) reachable from the machine running Claude Code.
+### Data Governance (Tags)
 
-- **Python 3.8+**
-  - Required for data generation scripts
-  - Included dependencies: confluent-kafka, faker, python-dotenv
+```
+Tags Applied:
+├─ c360 (6 topics)
+│  ├─ source (4 topics)
+│  │  ├─ corebank.customers
+│  │  ├─ corebank.accounts
+│  │  ├─ corebank.transactions
+│  │  └─ digital.interactions.avro
+│  ├─ raw (1 topic)
+│  │  └─ digital.interactions
+│  └─ aggregated (1 topic)
+│     └─ c360_snapshot
+```
+
+### Schema Registry
+
+```
+Registered Schemas:
+├─ corebank.customers-value (Schema ID: 100001)
+├─ corebank.accounts-value (Schema ID: 100002)
+├─ corebank.transactions-value (Schema ID: 100003)
+├─ digital.interactions.avro-key (Schema ID: 100008)
+├─ digital.interactions.avro-value (Schema ID: 100009)
+├─ c360_snapshot-key (Schema ID: 100011)
+└─ c360_snapshot-value (Schema ID: 100010)
+```
+
+### Flink Statements
+
+1. **create-digital-interactions-avro-table**
+   - Status: COMPLETED
+   - Creates AVRO table definition
+
+2. **replicate-digital-interactions-avro**
+   - Status: RUNNING
+   - Continuous JSON → AVRO transformation
+   - Reads: `digital.interactions` (JSON)
+   - Writes: `digital.interactions.avro` (AVRO)
+
+3. **create-c360-snapshot-table**
+   - Status: COMPLETED
+   - Creates c360_snapshot table with 37 fields
+
+4. **populate-c360-snapshot**
+   - Status: RUNNING
+   - Multi-way streaming join
+   - Real-time aggregations
+   - Updates customer snapshots continuously
 
 ---
 
-## 6. Practical Next Steps
+## 🔧 Troubleshooting
 
-### Quick Start (Automated)
+### Setup Issues
+
+#### Problem: Terraform fails with authentication error
+
+**Symptoms**:
+```
+Error: error authorizing Confluent Cloud Client
+```
+
+**Solution**:
+1. Verify API credentials in `environment/terraform-confluent-aws/terraform.tfvars`
+2. Ensure they are organization-level API keys (not cluster-scoped)
+3. Generate new keys at: https://confluent.cloud/settings/api-keys
+
+#### Problem: Claude Code doesn't see Confluent MCP tools
+
+**Symptoms**:
+- Claude says "I don't have access to Confluent tools"
+- Tool list doesn't include `list-topics`, `consume-messages`, etc.
+
+**Solution**:
+1. Check MCP configuration in Claude Code settings
+2. Verify path to `start-mcp-server.sh` is correct
+3. Restart Claude Code after configuration changes
+4. Test with: `cat ~/.confluent-mcp/.env` (credentials should be present)
+5. Run: `cd environment && ./reconfigure-mcp.sh` to update configuration
+
+#### Problem: Synthetic data generation fails
+
+**Symptoms**:
+```
+Error: Topic does not exist
+```
+
+**Solution**:
+1. Ensure infrastructure is deployed: `cd environment/terraform-confluent-aws && terraform state list`
+2. Verify topics exist: Ask Claude "Can you list all my Kafka topics?"
+3. Check credentials in `environment/data-generation/.env`
+4. Regenerate: `cd environment && ./generate-data.sh`
+
+### Runtime Issues
+
+#### Problem: Flink statement stays in PENDING
+
+**Symptoms**:
+- Flink statement created but never reaches RUNNING
+- No data flowing to c360_snapshot
+
+**Solution**:
+1. Check statement status: `confluent flink statement describe <statement-name> --compute-pool <pool-id>`
+2. Look for validation errors in status detail
+3. Verify source topics have data: Ask Claude to consume from source topics
+4. Check Flink compute pool has available CFUs
+5. Delete and recreate statement if needed
+
+#### Problem: c360_snapshot has no data
+
+**Symptoms**:
+- Topic exists but consuming returns empty or zeros
+
+**Root Cause**: Flink join is building state
+
+**Solution**:
+1. Wait for state to build (Flink stateful joins need initialization time)
+2. Check Flink statement is RUNNING (not FAILED)
+3. Verify source topics have data
+4. Ask Claude: "Can you consume messages from corebank.customers?"
+5. If source topics empty, regenerate data: `cd environment && ./generate-data.sh`
+
+#### Problem: Schema evolution errors
+
+**Symptoms**:
+```
+Schema is incompatible with previous version
+```
+
+**Solution**:
+1. Check Schema Registry compatibility mode
+2. Use forward/backward compatible changes only
+3. Or delete schema and recreate (non-production only):
+   ```bash
+   confluent schema-registry schema delete --subject <subject> --version all --permanent
+   ```
+
+### Claude + MCP Issues
+
+#### Problem: Claude generates incorrect Flink SQL
+
+**Symptoms**:
+- Flink statement fails with SQL syntax error
+- Column names don't match schema
+
+**Solution**:
+1. Copy the FULL error message to Claude
+2. Ask: "Can you fix this Flink SQL error: <paste error>"
+3. Claude will analyze and provide corrected SQL
+4. Delete failed statement and recreate with fixed SQL
+
+#### Problem: Tags aren't being created
+
+**Symptoms**:
+- Claude says tools unavailable or permission denied
+
+**Solution**:
+1. Ensure MCP is fully configured: `cd environment && ./reconfigure-mcp.sh`
+2. Restart Claude Code
+3. Verify tags work: Ask Claude "Can you create a tag called 'test'?"
+4. Check service account has `EnvironmentAdmin` role
+
+#### Problem: Consumer can't deserialize AVRO
+
+**Symptoms**:
+```
+Error deserializing value
+```
+
+**Solution**:
+1. Ensure using `--value-format avro` flag
+2. Verify Schema Registry credentials are configured
+3. Check schema ID in message matches registered schema
+4. Ask Claude to consume with proper format: "Can you consume from c360_snapshot with AVRO deserialization?"
+
+### Performance Issues
+
+#### Problem: High Flink CFU consumption
+
+**Symptoms**:
+- Flink dashboard shows high CFU usage
+- Resource utilization higher than expected
+
+**Solution**:
+1. Check for large state size (unbounded aggregations)
+2. Add TTL to stateful operations
+3. Reduce parallelism if over-provisioned
+4. Optimize window sizes (use fixed windows instead of session windows)
+5. Consider scaling down max CFUs in Terraform
+
+#### Problem: Consumer lag on c360_snapshot
+
+**Symptoms**:
+- Downstream apps falling behind
+- Lag metrics increasing
+
+**Solution**:
+1. Increase consumer parallelism
+2. Check consumer application performance
+3. Consider adding more partitions (requires recreation)
+4. Use consumer groups for load distribution
+
+---
+
+## 🗑️ Cleanup
+
+### Option 1: Clean Demo Resources (Keep Infrastructure)
+
+Removes c360_snapshot and Flink statements, preserves infrastructure for reuse:
 
 ```bash
-# 1. Bootstrap complete environment
-cd environment
-./bootstrap.sh
-# This will:
-#   - Deploy Kafka cluster + Flink pool
-#   - Provision MCP server
-#   - Create topics
-#   - Generate synthetic data (optional, prompted)
+./cleanup-demo.sh
+# Select Option 1
 
-# 2. Test MCP integration in Claude Code
-# Ask: "List my Kafka topics"
-# Ask: "Sample records from corebank.customers"
-
-# 3. Start building with Claude
-# Ask Claude to:
-#   - Explore the data and schemas
-#   - Design the customer_360_snapshot schema
-#   - Generate Flink SQL DDL and aggregations
+# Follow prompts to:
+# - Delete Flink statements
+# - Delete c360_snapshot topic
+# - Remove tags (via Claude + MCP)
 ```
 
-### Manual Steps (if needed)
+**What's kept:**
+- ✓ Kafka cluster
+- ✓ Flink compute pool
+- ✓ Source topics (`corebank.*`, `digital.interactions`)
+- ✓ MCP configuration
 
-1. **Infrastructure**: `cd environment/terraform-confluent-aws && terraform apply`
-2. **MCP Setup**: `cd environment/mcp-confluent && ./provision-confluent-mcp.sh`
-3. **Generate Data**: `cd environment && ./generate-data.sh`
-4. **Test**: Ask Claude to list topics and sample data
+**Use this when**: You want to rebuild the data product fresh or try different designs.
 
-### Building the Customer 360 Data Product
+### Option 2: Destroy Everything
 
-Once infrastructure and data are ready:
+Removes all Confluent Cloud resources:
 
-1. **Explore** with Claude + MCP: "Analyze the schemas for all topics"
-2. **Design**: Ask Claude to propose the `customer_360_snapshot` schema
-3. **Generate DDL**: Have Claude create Flink SQL table definitions
-4. **Build aggregations**: Claude generates the `INSERT INTO ... SELECT` query
-5. **Debug**: Share any Flink errors with Claude for fixes
-6. **Validate**: Run `SELECT * FROM customer_360_snapshot LIMIT 10`
+```bash
+./cleanup-demo.sh
+# Select Option 2
 
-See [environment/data-generation/README.md](environment/data-generation/README.md) for data details.
+# Confirms and runs:
+terraform destroy
+```
+
+**What's deleted:**
+- ✗ Kafka cluster
+- ✗ Flink compute pool
+- ✗ All topics (source + c360_snapshot)
+- ✗ All schemas
+- ✗ Service account
+
+**What's kept:**
+- ✓ MCP configuration in ~/.confluent-mcp
+- ✓ Local project files
+
+**Use this when**: Demo is complete and you want to remove all billable resources.
+
+### Manual Cleanup (If Needed)
+
+```bash
+# Delete specific Flink statement
+confluent flink statement delete <statement-name> --compute-pool <pool-id>
+
+# Delete topic
+confluent kafka topic delete c360_snapshot --cluster <cluster-id>
+
+# Delete schema (hard delete)
+confluent schema-registry schema delete --subject c360_snapshot-value --permanent
+```
+
+---
+
+## 📚 Next Steps & Resources
+
+### Extend the Use Case
+
+Once c360_snapshot is running, try:
+
+1. **Add More Metrics**
+   - Last 10 transactions instead of just counts
+   - Geographic analysis (ATM locations, merchant regions)
+   - Velocity metrics (transactions per day, week, month)
+
+2. **Build Downstream Applications**
+   - Real-time dashboard with customer snapshots
+   - ML model consuming c360_snapshot for churn prediction
+   - Alerting on high-risk customer behavior
+
+3. **Enable Tableflow**
+   - Materialize c360_snapshot to Iceberg/Delta tables
+   - Query with Athena, Redshift Spectrum, or Databricks
+   - Join with data warehouse for historical analysis
+
+4. **Multi-Region**
+   - Deploy Terraform config to different regions
+   - Set up cluster linking for DR
+   - Build global customer view
+
+### Learn More
+
+**Project Documentation**:
+- [Terraform Infrastructure Guide](environment/terraform-confluent-aws/README.md)
+- [C360 Snapshot Terraform](environment/terraform-c360-snapshot/README.md)
+- [Data Generation Guide](environment/data-generation/README.md)
+- [Confluent MCP Setup](environment/mcp-confluent/README.md)
+- [Complete Dataset Analysis](customer360_dataset_analysis.md)
+
+**Confluent Resources**:
+- [Flink SQL Reference](https://docs.confluent.io/cloud/current/flink/reference/overview.html)
+- [Stream Processing Patterns](https://developer.confluent.io/patterns/)
+- [Customer 360 Reference Architecture](https://www.confluent.io/resources/customer-360/)
+
+**MCP & Claude**:
+- [MCP Protocol Specification](https://modelcontextprotocol.io/)
+- [Confluent MCP Server](https://github.com/confluentinc/mcp-confluent)
+- [Claude Code Documentation](https://claude.ai/code)
+
+### Community & Support
+
+- **Confluent Community**: [forum.confluent.io](https://forum.confluent.io/)
+- **GitHub Issues**: Report bugs or request features
+- **Confluent Cloud Support**: Available with paid plans
+
+---
+
+## 📄 License
+
+This project is provided as a demonstration and learning resource.
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! To improve this demo:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add improvements (new prompts, better error handling, additional use cases)
+4. Update documentation
+5. Submit a pull request
+
+**Areas for contribution**:
+- Additional Customer 360 metrics
+- Multi-language support (currently Spanish)
+- Alternative cloud providers (Azure, GCP)
+- Performance optimizations
+- New Claude prompts and workflows
+
+---
+
+## 📞 Getting Help
+
+**Quick Help**:
+1. Check [Troubleshooting](#-troubleshooting) section above
+2. Review logs: `./startup-demo.sh` provides diagnostic information
+3. Ask Claude! Paste error messages and ask for help
+
+**Issues**:
+- Infrastructure: Check Terraform state and Confluent Cloud console
+- MCP: Verify ~/.confluent-mcp/.env has valid credentials
+- Flink: Check statement status and error details
+- Data: Regenerate synthetic data with `./generate-data.sh`
+
+**Still stuck?**
+- Open a GitHub issue with details (error messages, logs, steps to reproduce)
+- Contact your Confluent Solutions Engineer
+- Visit [Confluent Community](https://forum.confluent.io/)
+
+---
+
+**Built with**: Confluent Cloud + Apache Flink + Claude Code + MCP  
+**Total Lines of Code**: ~0 (built entirely with natural language prompts!)

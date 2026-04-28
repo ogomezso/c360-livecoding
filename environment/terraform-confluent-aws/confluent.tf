@@ -7,6 +7,12 @@ resource "confluent_environment" "customer_360" {
   }
 }
 
+# Extract Organization ID from environment resource name
+# Format: crn://confluent.cloud/organization=<org-id>/environment=<env-id>
+locals {
+  org_id = regex("organization=([^/]+)", confluent_environment.customer_360.resource_name)[0]
+}
+
 # Create Standard Kafka Cluster on AWS
 # Standard clusters have public endpoints and support Flink
 # Perfect for local MCP server access and demo workloads

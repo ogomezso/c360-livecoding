@@ -14,8 +14,6 @@ That's it! This single command will:
 5. ✅ Configure MCP with cluster credentials
 6. ✅ Validate the complete setup
 
-**Time**: ~5-10 minutes total
-
 ## 📋 Prerequisites
 
 - **Terraform** >= 1.5.0: `brew install terraform`
@@ -35,14 +33,6 @@ That's it! This single command will:
 - ✅ Confluent MCP server (`~/.confluent-mcp/`)
 - ✅ Credentials configured
 - ✅ Ready for Claude Code integration
-
-## 💰 Cost Estimate
-
-- **Kafka**: ~$0.16/eCKU-hour (only when in use)
-- **Flink**: ~$0.36/CFU-hour (only when active)
-- **Idle**: $0 (both auto-scale to zero)
-
-**Example**: 2 eCKU for 8 hours = **$2.56/day**
 
 ## 🔗 Claude Code Integration
 
