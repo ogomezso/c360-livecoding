@@ -25,6 +25,7 @@ ROBOT="🤖"
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-confluent-aws"
+TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-tableflow-aws"
 MCP_ENV_FILE="${HOME}/.confluent-mcp/.env"
 
 echo -e "${RED}${BOLD}"
@@ -107,13 +108,13 @@ echo ""
 echo -e "${YELLOW}${BOLD}Cleanup Options:${NC}"
 echo ""
 echo -e "${BOLD}1. Clean Demo Resources Only${NC} (recommended)"
-echo "   • Deletes: Flink jobs, tags, c360.snapshot topic"
-echo "   • Preserves: Infrastructure (Kafka, Flink pool, source topics)"
+echo "   • Deletes: Flink jobs, tags, c360.snapshot topic, Tableflow topics"
+echo "   • Preserves: Infrastructure (Kafka, Flink pool, source topics, AWS resources)"
 echo "   • Use this to reset the demo and start fresh"
 echo ""
 echo -e "${BOLD}2. Destroy Everything${NC}"
 echo "   • Deletes: All demo resources + complete infrastructure"
-echo "   • Runs: terraform destroy"
+echo "   • Runs: terraform destroy (Confluent + AWS Tableflow)"
 echo "   • Use this to completely remove the demo"
 echo ""
 read -p "Choose option (1 or 2): " -r
@@ -202,6 +203,18 @@ if [ "$CLEANUP_OPTION" = "1" ]; then
             print_warning "Could not delete schema (may not exist)"
         fi
 
+        # Delete Tableflow resources
+        print_header "Deleting Tableflow Resources"
+
+        print_info "Checking for Tableflow topics and catalog integrations..."
+        print_info "Use Claude + MCP to delete Tableflow resources:"
+        echo ""
+        echo -e '  '"${YELLOW}\"List all tableflow topics\"${NC}"
+        echo -e '  '"${YELLOW}\"Delete tableflow topic for c360.snapshot\"${NC}"
+        echo -e '  '"${YELLOW}\"List tableflow catalog integrations\"${NC}"
+        echo -e '  '"${YELLOW}\"Delete any catalog integrations\"${NC}"
+        echo ""
+
         # Delete tags (requires qualified names, which we'd need to fetch)
         print_header "Removing Tags"
 
@@ -219,12 +232,13 @@ if [ "$CLEANUP_OPTION" = "1" ]; then
         echo ""
         echo -e "${CYAN}Resources to delete:${NC}"
         echo -e "  ${TRASH} Flink statements: c360-agg-v3, digital_interactions_parsed"
+        echo -e "  ${TRASH} Tableflow topics and catalog integrations"
         echo -e "  ${TRASH} Tags: c360, source, data_product"
         echo -e "  ${TRASH} Topic: c360.snapshot"
         echo -e "  ${TRASH} Schema: c360.snapshot-value"
         echo ""
         echo -e "${CYAN}Ask Claude:${NC}"
-        echo -e '  '"${YELLOW}\"Delete Flink statements, tags, and c360.snapshot topic\"${NC}"
+        echo -e '  '"${YELLOW}\"Delete Flink statements, tableflow topics, tags, and c360.snapshot topic\"${NC}"
         echo ""
     fi
 
@@ -252,7 +266,7 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
         exit 0
     fi
 
-    print_info "Running terraform destroy..."
+    print_info "Running terraform destroy on Confluent infrastructure..."
     echo ""
 
     cd "$TERRAFORM_DIR"
@@ -261,7 +275,7 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
     terraform destroy -auto-approve
 
     if [ $? -eq 0 ]; then
-        print_success "Infrastructure destroyed successfully"
+        print_success "Confluent infrastructure destroyed successfully"
 
         # Verify state is empty
         RESOURCE_COUNT=$(terraform show -json 2>/dev/null | jq -r '.values.root_module.resources | length' 2>/dev/null || echo "0")
@@ -269,11 +283,72 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
             print_success "Terraform state confirmed empty (0 resources)"
         fi
 
+        # Clean up terraform state files and generated configs
+        print_info "Cleaning up terraform state files..."
+        rm -f terraform.tfstate terraform.tfstate.backup
+        rm -f .env.local
+        if [ -d ".terraform" ]; then
+            rm -rf .terraform
+        fi
+        print_success "Cleaned up terraform state and cache files"
+
         cd - > /dev/null
     else
         cd - > /dev/null
         print_error "Terraform destroy failed. Check errors above."
         exit 1
+    fi
+
+    # Destroy Tableflow AWS infrastructure if it exists
+    if [ -d "$TABLEFLOW_TERRAFORM_DIR" ] && [ -f "$TABLEFLOW_TERRAFORM_DIR/terraform.tfstate" ]; then
+        print_header "Destroying Tableflow AWS Infrastructure"
+
+        print_info "Running terraform destroy on Tableflow AWS resources..."
+        echo ""
+
+        cd "$TABLEFLOW_TERRAFORM_DIR"
+
+        # Create minimal terraform.tfvars if missing (needed for destroy)
+        if [ ! -f "terraform.tfvars" ]; then
+            print_info "Creating minimal terraform.tfvars for destroy..."
+            cat > terraform.tfvars <<EOF
+# Minimal config for terraform destroy
+aws_region = "eu-west-1"
+confluent_cloud_api_key = "dummy"
+confluent_cloud_api_secret = "dummy"
+confluent_environment_id = "env-dummy"
+confluent_cluster_id = "lkc-dummy"
+create_provider_integration = false
+EOF
+        fi
+
+        terraform destroy -auto-approve
+
+        if [ $? -eq 0 ]; then
+            print_success "Tableflow AWS infrastructure destroyed successfully"
+
+            # Verify state is empty
+            TF_RESOURCE_COUNT=$(terraform show -json 2>/dev/null | jq -r '.values.root_module.resources | length' 2>/dev/null || echo "0")
+            if [ "$TF_RESOURCE_COUNT" = "0" ]; then
+                print_success "Tableflow terraform state confirmed empty (0 resources)"
+            fi
+
+            # Clean up ALL terraform files to ensure fresh start
+            print_info "Cleaning up terraform state and generated files..."
+            rm -f terraform.tfstate terraform.tfstate.backup
+            rm -f terraform.tfvars terraform.tfvars.bak
+            if [ -d ".terraform" ]; then
+                rm -rf .terraform
+            fi
+            print_success "Cleaned up all terraform files"
+
+            cd - > /dev/null
+        else
+            cd - > /dev/null
+            print_warning "Tableflow terraform destroy failed. You may need to clean up AWS resources manually."
+        fi
+    else
+        print_info "Tableflow AWS infrastructure not deployed, skipping"
     fi
 fi
 
@@ -289,8 +364,8 @@ echo -e "${NC}"
 
 if [ "$CLEANUP_OPTION" = "1" ]; then
     echo -e "${CYAN}${BOLD}What Was Cleaned:${NC}"
-    echo -e "  ${GREEN}${CHECK}${NC} Demo resources removed (Flink jobs, tags, c360.snapshot)"
-    echo -e "  ${GREEN}${CHECK}${NC} Infrastructure preserved (Kafka, Flink, source topics)"
+    echo -e "  ${GREEN}${CHECK}${NC} Demo resources removed (Flink jobs, tags, c360.snapshot, Tableflow topics)"
+    echo -e "  ${GREEN}${CHECK}${NC} Infrastructure preserved (Kafka, Flink, source topics, AWS resources)"
     echo ""
     echo -e "${CYAN}${BOLD}Next Steps:${NC}"
     echo -e "  ${ARROW} Rebuild the demo: ${YELLOW}./startup-demo.sh${NC}"
@@ -300,6 +375,7 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
     echo -e "  ${GREEN}${CHECK}${NC} Complete infrastructure removed"
     echo -e "  ${GREEN}${CHECK}${NC} All topics, schemas, and Flink resources deleted"
     echo -e "  ${GREEN}${CHECK}${NC} Kafka cluster and Flink pool destroyed"
+    echo -e "  ${GREEN}${CHECK}${NC} Tableflow AWS resources destroyed (S3, IAM, provider integration)"
     echo ""
     echo -e "${CYAN}${BOLD}Next Steps:${NC}"
     echo -e "  ${ARROW} Redeploy from scratch: ${YELLOW}./startup-demo.sh${NC}"

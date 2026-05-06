@@ -1,0 +1,106 @@
+# ====================================================================
+# Tableflow AWS Infrastructure - Terraform Variables Example
+# ====================================================================
+#
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# IMPORTANT: Never commit terraform.tfvars to git (it contains secrets)
+# ====================================================================
+
+# ====================================================================
+# AWS Configuration
+# ====================================================================
+
+# AWS region for S3 bucket and IAM resources
+# Should match your Kafka cluster region for optimal performance
+aws_region = "eu-west-1"
+
+# AWS credentials (required)
+# Get these from AWS Console > IAM > Security Credentials
+# IMPORTANT: Keep these secret!
+aws_access_key = "YOUR_AWS_ACCESS_KEY_HERE"
+aws_secret_key = "YOUR_AWS_SECRET_KEY_HERE"
+
+# ====================================================================
+# S3 Bucket Configuration
+# ====================================================================
+
+# Prefix for S3 bucket name (a random suffix will be added for uniqueness)
+# Must contain only lowercase letters, numbers, and hyphens
+bucket_name_prefix = "customer-360-tableflow-storage"
+
+# ====================================================================
+# Confluent Cloud Configuration
+# ====================================================================
+
+# Confluent Cloud API credentials (required for provider integration)
+# Get these from https://confluent.cloud/settings/api-keys
+# Create a Cloud API Key with 'OrganizationAdmin' or 'EnvironmentAdmin' scope
+confluent_cloud_api_key    = "YOUR_CONFLUENT_API_KEY_HERE"
+confluent_cloud_api_secret = "YOUR_CONFLUENT_API_SECRET_HERE"
+
+# Confluent Environment ID (required)
+# Get this from: cd ../terraform-confluent-aws && terraform output environment_id
+# Format: env-xxxxx
+confluent_environment_id = "env-xxxxx"
+
+# Confluent Kafka Cluster ID (required)
+# Get this from: cd ../terraform-confluent-aws && terraform output kafka_cluster_id
+# Format: lkc-xxxxx
+confluent_cluster_id = "lkc-xxxxx"
+
+# ====================================================================
+# IAM Role Configuration
+# ====================================================================
+
+# Name of the IAM role for Tableflow
+# Must contain only alphanumeric characters, hyphens, and underscores
+iam_role_name = "customer-360-tableflow-role"
+
+# ====================================================================
+# Provider Integration Configuration
+# ====================================================================
+
+# Display name for the Confluent provider integration
+provider_integration_display_name = "customer-360-tableflow-integration"
+
+# Whether to create the provider integration via Terraform
+# Set to true to create automatically (recommended)
+# Set to false to create manually via Confluent UI or MCP
+create_provider_integration = true
+
+# ====================================================================
+# Phase 2: Trust Policy Update (Optional - for two-phase deployment)
+# ====================================================================
+#
+# After initial deployment, if you need to update the IAM role trust policy,
+# uncomment and fill in these values:
+#
+# Get these values by running:
+#   terraform output -raw confluent_role_arn
+#   terraform output -raw confluent_external_id
+#
+# Then re-run: terraform apply
+# ====================================================================
+
+# Confluent's IAM role ARN (from provider integration)
+# Format: arn:aws:iam::851725421142:role/cspi-xxxxx
+# confluent_provider_integration_role_arn = "arn:aws:iam::851725421142:role/cspi-xxxxx"
+
+# External ID from Confluent provider integration
+# Format: UUID string
+# confluent_external_id = "your-external-id-here"
+
+# ====================================================================
+# Resource Tagging
+# ====================================================================
+
+# Tags to apply to all AWS resources
+# These help with cost tracking and resource management
+tags = {
+  Environment = "customer-360-demo"
+  ManagedBy   = "terraform"
+  Purpose     = "tableflow-storage"
+  Project     = "customer-360"
+}
