@@ -18,6 +18,16 @@ environment/mcp/
 *.env
 
 # ==========================================
+# Java / Gradle / Maven Generated Files
+# ==========================================
+
+# Gradle local cache and lock files
+.gradle/
+
+# Maven build output
+target/
+
+# ==========================================
 # Terraform Generated Files
 # ==========================================
 
