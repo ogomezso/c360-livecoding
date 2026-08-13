@@ -134,35 +134,17 @@ cd ../..
 5. ✓ Generates 2,000+ realistic Spanish banking records
 6. ✓ Shows infrastructure summary and Claude prompts
 
-### Step 3: Configure Claude Code
+### Step 3: Verify Setup
 
-Add Confluent MCP to your Claude Code settings:
-
-**macOS/Linux**: `~/.claude/settings.json`  
-**Windows**: `%APPDATA%\Claude\settings.json`
-
-```json
-{
-  "mcpServers": {
-    "confluent": {
-      "command": "/Users/yourusername/.confluent-mcp/start-mcp-server.sh",
-      "args": []
-    }
-  }
-}
-```
-
-Restart Claude Code.
-
-### Step 4: Verify Setup
-
-Open Claude Code and ask:
+Setup already generated a project-level `.mcp.json` at the repo root (OAuth-based `@confluentinc/mcp-confluent`) — no manual settings edit needed for the Claude Code CLI. Open a **new** terminal/session in the repo (Claude Code only reads `.mcp.json` on session start) and ask:
 
 ```
 Can you list all my Kafka topics?
 ```
 
-**Expected response**: Claude lists all topics including `corebank.customers`, `corebank.accounts`, `corebank.transactions`, `digital.interactions`.
+**Expected response**: Claude lists all topics including `corebank.customers`, `corebank.accounts`, `corebank.transactions`, `digital.interactions`. The first tool call triggers an interactive Confluent Cloud OAuth login.
+
+If you also use the VS Code extension or Claude Desktop app, run `./environment/configure-claude-mcp.sh --vscode` or `--desktop` — those read from global settings, not the project `.mcp.json`.
 
 ✅ **You're ready to build!**
 
@@ -500,11 +482,10 @@ Error: error authorizing Confluent Cloud Client
 - Tool list doesn't include `list-topics`, `consume-messages`, etc.
 
 **Solution**:
-1. Check MCP configuration in Claude Code settings
-2. Verify path to `start-mcp-server.sh` is correct
-3. Restart Claude Code after configuration changes
-4. Test with: `cat ~/.confluent-mcp/.env` (credentials should be present)
-5. Run: `cd environment && ./reconfigure-mcp.sh` to update configuration
+1. Confirm `.mcp.json` exists at the repo root and points at `@confluentinc/mcp-confluent`
+2. Open a **new** terminal/session — Claude Code only reads `.mcp.json` on session start, it won't pick up changes in an already-running window
+3. Run: `cd environment && ./reconfigure-mcp.sh` to regenerate `.mcp.json` and reset stale approval state
+4. Trigger a tool call (e.g. "list my Kafka topics") to go through the Confluent Cloud OAuth login if you haven't already
 
 #### Problem: Synthetic data generation fails
 
@@ -674,8 +655,7 @@ terraform destroy
 - ✗ Service account
 
 **What's kept:**
-- ✓ MCP configuration in ~/.confluent-mcp
-- ✓ Local project files
+- ✓ Local project files (including `.mcp.json`, though it'll point at a deleted cluster until you re-provision and run `./reconfigure-mcp.sh`)
 
 **Use this when**: Demo is complete and you want to remove all billable resources.
 
@@ -726,7 +706,7 @@ Once c360_snapshot is running, try:
 - [Terraform Infrastructure Guide](environment/terraform-confluent-aws/README.md)
 - [C360 Snapshot Terraform](environment/terraform-c360-snapshot/README.md)
 - [Data Generation Guide](environment/data-generation/README.md)
-- [Confluent MCP Setup](environment/mcp-confluent/README.md)
+- [Confluent MCP Tools Reference](environment/MCP_TOOLS_REFERENCE.md)
 - [Complete Dataset Analysis](customer360_dataset_analysis.md)
 
 **Confluent Resources**:
@@ -781,7 +761,7 @@ Contributions welcome! To improve this demo:
 
 **Issues**:
 - Infrastructure: Check Terraform state and Confluent Cloud console
-- MCP: Verify ~/.confluent-mcp/.env has valid credentials
+- MCP: Verify `.mcp.json` exists at the repo root and re-run `environment/reconfigure-mcp.sh` if stale
 - Flink: Check statement status and error details
 - Data: Regenerate synthetic data with `./generate-data.sh`
 

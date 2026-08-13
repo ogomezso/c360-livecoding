@@ -16,7 +16,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
 TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/terraform-tableflow-aws"
 MCP_DIR="${SCRIPT_DIR}/mcp-confluent"
-MCP_HOME="${HOME}/.confluent-mcp"
+MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
+# The package version is intentionally unpinned in .mcp.json — Confluent's
+# org-wide Claude Code MCP allowlist matches the bare "@confluentinc/mcp-confluent"
+# package name exactly; a pinned "@x.y.z" suffix wouldn't match and Claude Code
+# would silently drop the server (see create_project_mcp_config below).
 
 # Colors for output
 RED='\033[0;31m'
@@ -244,273 +248,33 @@ deploy_confluent_infrastructure() {
 }
 
 # ============================================================================
-# Step 4: Deploy Tableflow AWS Infrastructure (Optional)
+# Step 4: Ensure a Node runtime compatible with mcp-confluent's native addon
 # ============================================================================
-deploy_tableflow_aws_infrastructure() {
-    log_section "Step 4: Deploying Tableflow AWS Infrastructure (Optional)"
+# @confluentinc/mcp-confluent depends natively on @confluentinc/kafka-javascript,
+# which only ships prebuilt binaries up to Node ABI 127 (Node 22.x). Whatever
+# nvm/mise resolves as the machine's "latest" Node drifts forward over time and
+# will eventually outrun that — that's a proven, reproducible failure, not a
+# hypothetical (see MCP_NODE_VERSION uses below). So the MCP server is always
+# launched via a pinned Node version through mise, insulated from "latest".
+MCP_NODE_VERSION="22"
 
-    echo "Tableflow enables Kafka topics to be materialized as Apache Iceberg or Delta Lake tables in S3"
-    echo "This is optional and requires AWS credentials and permissions."
-    echo ""
+install_mcp_node_runtime() {
+    log_section "Step 4: Ensuring Node ${MCP_NODE_VERSION} is available for the MCP server"
 
-    read -p "Deploy Tableflow AWS infrastructure? [y/N]: " deploy_tableflow
-    deploy_tableflow=${deploy_tableflow:-N}
-
-    if [[ ! "$deploy_tableflow" =~ ^[Yy]$ ]]; then
-        log_info "Skipping Tableflow deployment"
-        echo ""
-        log_info "You can deploy it later by running:"
-        echo "  cd $TABLEFLOW_TERRAFORM_DIR"
-        echo "  make deploy"
-        echo ""
-        return 0
-    fi
-
-    # Check if tableflow terraform directory exists
-    if [ ! -d "$TABLEFLOW_TERRAFORM_DIR" ]; then
-        log_error "Tableflow terraform directory not found: $TABLEFLOW_TERRAFORM_DIR"
+    if ! command -v mise >/dev/null 2>&1; then
+        log_error "mise not found in PATH — required to pin a Node version compatible with mcp-confluent's native addon"
+        log_info "Install mise: https://mise.jdx.dev/getting-started.html"
         return 1
     fi
 
-    cd "$TABLEFLOW_TERRAFORM_DIR"
+    mise install "node@${MCP_NODE_VERSION}"
 
-    # Check for terraform.tfvars
-    if [ ! -f "terraform.tfvars" ]; then
-        log_info "Creating terraform.tfvars from AWS CLI and terraform outputs..."
-        echo ""
-
-        # Try to authenticate with AWS CLI
-        local aws_auth_success=false
-
-        # First, try without profile (uses default or environment variables)
-        if aws sts get-caller-identity > /dev/null 2>&1; then
-            aws_auth_success=true
-            log_success "AWS authentication successful"
-        else
-            # If no default auth, check if AWS_PROFILE is set
-            if [ -n "$AWS_PROFILE" ]; then
-                if aws sts get-caller-identity --profile "$AWS_PROFILE" > /dev/null 2>&1; then
-                    aws_auth_success=true
-                    log_success "AWS authentication successful (profile: $AWS_PROFILE)"
-                fi
-            else
-                # Try to find a profile in ~/.aws/credentials
-                if [ -f "$HOME/.aws/credentials" ]; then
-                    local first_profile=$(grep '^\[' "$HOME/.aws/credentials" | head -1 | tr -d '[]')
-                    if [ -n "$first_profile" ]; then
-                        log_info "No AWS_PROFILE set, trying profile: $first_profile"
-                        if aws sts get-caller-identity --profile "$first_profile" > /dev/null 2>&1; then
-                            export AWS_PROFILE="$first_profile"
-                            aws_auth_success=true
-                            log_success "AWS authentication successful (using profile: $first_profile)"
-                        fi
-                    fi
-                fi
-            fi
-        fi
-
-        if [ "$aws_auth_success" = true ]; then
-            # Get caller identity for logging
-            local caller_identity
-            if [ -n "$AWS_PROFILE" ]; then
-                caller_identity=$(aws sts get-caller-identity --profile "$AWS_PROFILE" --output text 2>/dev/null | awk '{print $2}')
-            else
-                caller_identity=$(aws sts get-caller-identity --output text 2>/dev/null | awk '{print $2}')
-            fi
-            log_info "AWS identity: $caller_identity"
-
-            # Get Confluent Cloud cluster region from terraform (S3 bucket should be in same region)
-            cd "$TERRAFORM_DIR"
-            local kafka_cluster_region=$(terraform output -raw kafka_cluster_region 2>/dev/null)
-            cd "$TABLEFLOW_TERRAFORM_DIR"
-
-            # Extract AWS region from cluster region (format: AWS/eu-west-1)
-            local aws_region
-            if [[ "$kafka_cluster_region" == AWS/* ]]; then
-                aws_region="${kafka_cluster_region#AWS/}"
-                log_success "Using Kafka cluster region: $aws_region"
-            else
-                # Fallback to AWS CLI config or environment
-                aws_region="${AWS_REGION:-${AWS_DEFAULT_REGION}}"
-                if [ -z "$aws_region" ]; then
-                    if [ -n "$AWS_PROFILE" ]; then
-                        aws_region=$(aws configure get region --profile "$AWS_PROFILE" 2>/dev/null || echo "us-east-1")
-                    else
-                        aws_region=$(aws configure get region 2>/dev/null || echo "us-east-1")
-                    fi
-                fi
-                log_warning "Could not get cluster region, using: $aws_region"
-            fi
-
-            # Get values from main terraform (ALWAYS fresh)
-            cd "$TERRAFORM_DIR"
-
-            # Refresh terraform state to ensure we have current values
-            log_info "Refreshing Confluent terraform state to get current IDs..."
-            terraform refresh -lock=false > /dev/null 2>&1 || true
-
-            local env_id=$(terraform output -raw environment_id 2>/dev/null)
-            local cluster_id=$(terraform output -raw kafka_cluster_id 2>/dev/null)
-            local confluent_api_key=$(terraform output -raw mcp_server_env_config 2>/dev/null | grep "CONFLUENT_CLOUD_API_KEY=" | cut -d'=' -f2)
-            local confluent_api_secret=$(terraform output -raw mcp_server_env_config 2>/dev/null | grep "CONFLUENT_CLOUD_API_SECRET=" | cut -d'=' -f2)
-            cd "$TABLEFLOW_TERRAFORM_DIR"
-
-            if [ -z "$env_id" ] || [ -z "$cluster_id" ]; then
-                log_error "Could not retrieve environment ID or cluster ID from terraform"
-                cd - > /dev/null
-                return 1
-            fi
-
-            log_success "Retrieved Confluent Cloud configuration from terraform"
-            log_info "Environment ID: $env_id"
-            log_info "Cluster ID: $cluster_id"
-
-            # Create terraform.tfvars (without explicit AWS keys - use default provider)
-            cat > terraform.tfvars <<EOF
-# AWS Configuration
-# Using AWS CLI default credential chain (profiles, SSO, environment variables, etc.)
-# No explicit keys needed - Terraform AWS provider will use the same credentials as AWS CLI
-# AWS Profile in use: ${AWS_PROFILE:-default}
-aws_region = "$aws_region"
-
-# Confluent Cloud Configuration (from terraform outputs)
-confluent_cloud_api_key    = "$confluent_api_key"
-confluent_cloud_api_secret = "$confluent_api_secret"
-confluent_environment_id   = "$env_id"
-confluent_cluster_id       = "$cluster_id"
-
-# Provider Integration
-create_provider_integration = true
-
-# Phase 2: Trust Policy Update (will be auto-populated after first apply)
-# confluent_provider_integration_role_arn = ""
-# confluent_external_id                   = ""
-EOF
-
-            log_success "terraform.tfvars created with AWS CLI credentials"
-        else
-            log_error "AWS authentication failed"
-            echo ""
-            log_info "Please authenticate with AWS first. Options:"
-            log_info "  1. For Confluent employees: run your assume command"
-            log_info "     Example: assume <role-name>"
-            log_info "  2. For AWS SSO: aws sso login --profile <profile-name>"
-            log_info "  3. For static credentials: aws configure"
-            echo ""
-            log_info "Then run this script again."
-            cd - > /dev/null
-            return 0
-        fi
-    else
-        log_success "terraform.tfvars already exists"
-    fi
-
-    # Initialize Terraform
-    log_info "Initializing Tableflow Terraform..."
-    terraform init -upgrade
-
-    # Validate configuration
-    log_info "Validating Terraform configuration..."
-    terraform validate
-
-    # Apply configuration (Phase 1)
-    log_info "Deploying Tableflow AWS infrastructure (Phase 1)..."
-    log_warning "This will create: S3 bucket, IAM role, Provider Integration"
-    terraform apply -auto-approve
-
-    if [ $? -ne 0 ]; then
-        log_error "Tableflow deployment failed"
-        cd - > /dev/null
+    if ! mise exec "node@${MCP_NODE_VERSION}" -- node -e "process.exit(0)" 2>/dev/null; then
+        log_error "Failed to set up Node ${MCP_NODE_VERSION} via mise"
         return 1
     fi
 
-    log_success "Tableflow AWS infrastructure deployed (Phase 1)"
-
-    # Check if trust policy needs update
-    local trust_status=$(terraform output -raw current_trust_policy_status 2>/dev/null)
-    if [[ "$trust_status" == *"deny-all"* ]] || [[ "$trust_status" == *"not yet updated"* ]]; then
-        echo ""
-        log_warning "⚠️  Trust Policy Update Required (Phase 2)"
-        echo ""
-        log_info "Automatically updating trust policy with Confluent role ARN..."
-
-        local confluent_role_arn=$(terraform output -raw confluent_role_arn 2>/dev/null)
-        local external_id=$(terraform output -raw confluent_external_id 2>/dev/null)
-
-        if [ -n "$confluent_role_arn" ] && [ -n "$external_id" ]; then
-            # Update terraform.tfvars with trust policy values
-            if grep -q "^# confluent_provider_integration_role_arn" terraform.tfvars; then
-                sed -i.bak "s|^# confluent_provider_integration_role_arn = \".*\"|confluent_provider_integration_role_arn = \"$confluent_role_arn\"|" terraform.tfvars
-                sed -i.bak "s|^# confluent_external_id = \".*\"|confluent_external_id = \"$external_id\"|" terraform.tfvars
-                rm -f terraform.tfvars.bak
-            else
-                echo "" >> terraform.tfvars
-                echo "# Phase 2: Trust Policy Update (auto-populated)" >> terraform.tfvars
-                echo "confluent_provider_integration_role_arn = \"$confluent_role_arn\"" >> terraform.tfvars
-                echo "confluent_external_id                   = \"$external_id\"" >> terraform.tfvars
-            fi
-
-            # Re-apply to update trust policy
-            log_info "Re-applying terraform to update IAM trust policy..."
-            terraform apply -auto-approve
-
-            if [ $? -eq 0 ]; then
-                log_success "Trust policy updated successfully (Phase 2 complete)"
-            else
-                log_error "Trust policy update failed"
-                log_info "You can update manually later - see README.md"
-            fi
-        else
-            log_error "Could not retrieve Confluent role ARN and external ID"
-            log_info "Update trust policy manually - see README.md for instructions"
-        fi
-    else
-        log_success "Trust policy already configured"
-    fi
-
-    # Show tableflow outputs
-    echo ""
-    log_info "Tableflow Infrastructure Details:"
-    terraform output -json | jq -r '
-        "  S3 Bucket: \(.s3_bucket_name.value)",
-        "  S3 Region: \(.s3_bucket_region.value)",
-        "  IAM Role: \(.iam_role_name.value)",
-        "  Provider Integration: \(.provider_integration_id.value)",
-        "  Trust Policy: \(.current_trust_policy_status.value)"
-    ' 2>/dev/null || terraform output
-
-    cd - > /dev/null
-}
-
-# ============================================================================
-# Step 5: Provision MCP Server
-# ============================================================================
-provision_mcp_server() {
-    log_section "Step 5: Provisioning Confluent MCP Server"
-
-    if [ -d "$MCP_HOME" ]; then
-        log_warning "MCP directory already exists: $MCP_HOME"
-        read -p "Re-provision MCP server? [Y/n]: " reprovision
-        reprovision=${reprovision:-Y}
-        if [[ ! "$reprovision" =~ ^[Yy]$ ]]; then
-            log_info "Skipping MCP provisioning"
-            return 0
-        fi
-    fi
-
-    log_info "Running MCP provisioning script..."
-    cd "$MCP_DIR"
-
-    # Ensure nvm is loaded if needed
-    if ! command_exists node && [ -s "$HOME/.nvm/nvm.sh" ]; then
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    fi
-
-    ./provision-confluent-mcp.sh
-
-    log_success "MCP server provisioned"
-    cd - > /dev/null
+    log_success "Node ${MCP_NODE_VERSION} ready via mise"
 }
 
 # ============================================================================
@@ -554,32 +318,35 @@ create_project_mcp_config() {
     local project_root="$(cd "$SCRIPT_DIR/.." && pwd)"
     local mcp_config="${project_root}/.mcp.json"
 
-    # Detect node and npx paths (support nvm)
-    local node_path=$(which node)
-    local npx_path=$(which npx)
-
-    if [ -z "$node_path" ] || [ -z "$npx_path" ]; then
-        log_error "Node.js or npx not found in PATH"
+    if ! command -v mise >/dev/null 2>&1; then
+        log_error "mise not found on PATH (install_mcp_node_runtime should have run first)"
         return 1
     fi
 
-    log_info "Creating .mcp.json in project root..."
-    log_info "Node path: $node_path"
-    log_info "NPX path: $npx_path"
+    local mcp_node_bin_dir="$(mise where "node@${MCP_NODE_VERSION}")/bin"
 
+    log_info "Creating .mcp.json in project root..."
+    log_info "Package: @confluentinc/mcp-confluent (unpinned, per org allowlist), Node ${MCP_NODE_VERSION}"
+
+    # Confluent's org-wide Claude Code policy only allows MCP servers whose
+    # command+args match a reviewed allowlist exactly — for mcp-confluent
+    # that's a bare "npx -y @confluentinc/mcp-confluent [--oauth|--config ...]",
+    # nothing else. A "mise exec node@N -- npx ..." wrapper (or a pinned
+    # "@x.y.z" version suffix) doesn't match, so Claude Code silently drops
+    # the server — no error, no "pending approval", it just never appears.
+    # To keep the Node ${MCP_NODE_VERSION} pin (needed for mcp-confluent's
+    # native addon) without breaking that exact-command match, the pin moves
+    # into "env.PATH" instead of the command itself.
     cat > "$mcp_config" <<EOF
 {
   "mcpServers": {
     "confluent": {
-      "command": "$node_path",
-      "args": [
-        "$npx_path",
-        "-y",
-        "@confluentinc/mcp-confluent",
-        "-e",
-        "$MCP_HOME/.env"
-      ],
-      "env": {}
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@confluentinc/mcp-confluent", "--oauth"],
+      "env": {
+        "PATH": "${mcp_node_bin_dir}:${PATH}"
+      }
     }
   }
 }
@@ -587,6 +354,18 @@ EOF
 
     log_success "Project MCP configuration created: .mcp.json"
     log_info "This file enables Confluent MCP in Claude Code (VS Code extension & CLI)"
+    log_info "Claude will prompt an interactive Confluent Cloud OAuth login on first tool use — the .env credentials from Step 5 are for the demo scripts, not for Claude's MCP connection"
+
+    # Claude Code remembers per-project approve/reject decisions for
+    # .mcp.json servers in ~/.claude.json, keyed by server name — not by
+    # the args/env inside it. A stale rejection from a previous cluster
+    # would silently block this freshly-regenerated config forever, in
+    # both the CLI and the VS Code extension. Clear it so the next
+    # session starts from a clean slate.
+    if command -v claude >/dev/null 2>&1; then
+        (cd "$project_root" && claude mcp reset-project-choices >/dev/null 2>&1) || true
+        log_info "Reset Claude Code's project MCP approval state (avoids stale approve/reject from a prior run)"
+    fi
 }
 
 # ============================================================================
@@ -682,9 +461,13 @@ display_next_steps() {
 
     echo -e "${CYAN}📝 Next Steps:${NC}"
     echo "  1. Test MCP integration:"
-    echo "     - Restart/reload Claude Code (VS Code or CLI)"
-    echo '     - Ask: "List my Kafka topics"'
     echo "     - .mcp.json already configured for project-level MCP!"
+    echo "     - Claude Code only reads .mcp.json when a session starts, it will"
+    echo "       NOT pick this up in an already-running window/terminal."
+    echo "     - VS Code: fully quit (Cmd+Q) and reopen — 'Reload Window' alone"
+    echo "       may not restart the extension host that owns the MCP connection."
+    echo "     - CLI: open a brand-new terminal (don't reuse one already running claude)."
+    echo '     - Then ask: "List my Kafka topics"'
     echo ""
     echo "  2. Generate demo data (if not done already):"
     echo "     ./generate-data.sh"
@@ -747,12 +530,11 @@ main() {
     echo "  1. Check prerequisites (Terraform, Node.js)"
     echo "  2. Get Confluent Cloud credentials"
     echo "  3. Deploy Kafka cluster + Flink compute pool"
-    echo "  4. Deploy Tableflow AWS infrastructure (optional)"
-    echo "  5. Provision Confluent MCP server"
-    echo "  6. Configure MCP with your cluster credentials"
-    echo "  7. Create project MCP configuration"
-    echo "  8. Generate demo data (optional)"
-    echo "  9. Validate the complete setup"
+    echo "  4. Ensure a Node runtime compatible with the MCP server"
+    echo "  5. Configure MCP with your cluster credentials"
+    echo "  6. Create project MCP configuration"
+    echo "  7. Generate demo data (optional)"
+    echo "  8. Validate the complete setup"
     echo ""
 
     read -p "Continue? [Y/n]: " confirm
@@ -765,8 +547,7 @@ main() {
     check_prerequisites
     get_confluent_credentials
     deploy_confluent_infrastructure
-    deploy_tableflow_aws_infrastructure
-    provision_mcp_server
+    install_mcp_node_runtime
     configure_mcp_credentials
     create_project_mcp_config
     generate_demo_data

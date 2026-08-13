@@ -6,13 +6,13 @@ set -e
 # ============================================================================
 # This script removes all deployed resources:
 # 1. Confluent Cloud infrastructure (Terraform destroy)
-# 2. Local MCP server installation (~/.confluent-mcp)
+# 2. Local MCP credentials (environment/mcp-confluent/.env)
 # 3. Optionally removes saved credentials
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
-MCP_HOME="${HOME}/.confluent-mcp"
+MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
 
 # Colors for output
 RED='\033[0;31m'
@@ -85,15 +85,15 @@ show_cleanup_summary() {
         echo ""
     fi
 
-    # Check MCP installation
-    if [ -d "$MCP_HOME" ]; then
-        echo -e "${RED}🗑️  MCP Server:${NC}"
-        echo "  - Directory: $MCP_HOME"
+    # Check MCP credentials (the mcp-confluent/ directory itself holds
+    # git-tracked scripts and is not deleted, only the per-cluster .env)
+    if [ -f "$MCP_HOME/.env" ]; then
+        echo -e "${RED}🗑️  MCP Credentials:${NC}"
         echo "  - Configuration: $MCP_HOME/.env"
-        echo "  - Scripts: start-mcp-server.sh, validate-setup.sh"
+        echo "  - Backups: $MCP_HOME/.env.backup*"
         echo ""
     else
-        echo -e "${BLUE}ℹ️  MCP server not installed${NC}"
+        echo -e "${BLUE}ℹ️  No MCP credentials file found${NC}"
         echo ""
     fi
 
@@ -150,25 +150,19 @@ destroy_terraform_resources() {
     cd - > /dev/null
 }
 
-# Remove MCP server installation
+# Remove stale MCP credentials for the now-destroyed cluster
 remove_mcp_server() {
-    log_section "Step 2: Removing MCP Server"
+    log_section "Step 2: Removing MCP Credentials"
 
-    if [ ! -d "$MCP_HOME" ]; then
-        log_info "MCP server not installed, skipping..."
+    if [ ! -f "$MCP_HOME/.env" ] && ! ls "$MCP_HOME"/.env.backup* >/dev/null 2>&1; then
+        log_info "No MCP credentials found, skipping..."
         return 0
     fi
 
-    log_info "Removing MCP directory: $MCP_HOME"
+    log_info "Removing stale credentials in: $MCP_HOME"
+    rm -f "$MCP_HOME/.env" "$MCP_HOME"/.env.backup*
 
-    # Show what's inside before deleting
-    if [ -f "$MCP_HOME/.env" ]; then
-        log_info "Configuration file will be removed"
-    fi
-
-    rm -rf "$MCP_HOME"
-
-    log_success "MCP server removed"
+    log_success "MCP credentials removed"
 }
 
 # Remove project MCP configuration
@@ -186,6 +180,11 @@ remove_project_mcp_config() {
     rm -f "$project_mcp"
 
     log_success "Project MCP configuration removed"
+
+    if command -v claude >/dev/null 2>&1; then
+        (cd "${SCRIPT_DIR}/.." && claude mcp reset-project-choices >/dev/null 2>&1) || true
+        log_info "Reset Claude Code's project MCP approval state"
+    fi
 }
 
 # Remove saved credentials
@@ -224,10 +223,10 @@ display_completion() {
         echo -e "  ${GREEN}✅ Confluent Cloud resources destroyed${NC}"
     fi
 
-    if [ -d "$MCP_HOME" ]; then
-        echo -e "  ${YELLOW}⚠️  MCP server still installed${NC}"
+    if [ -f "$MCP_HOME/.env" ]; then
+        echo -e "  ${YELLOW}⚠️  MCP credentials still present${NC}"
     else
-        echo -e "  ${GREEN}✅ MCP server removed${NC}"
+        echo -e "  ${GREEN}✅ MCP credentials removed${NC}"
     fi
 
     local project_mcp="${SCRIPT_DIR}/../.mcp.json"
@@ -304,7 +303,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "This script destroys:"
             echo "  • All Confluent Cloud resources (via Terraform)"
-            echo "  • MCP server installation (~/.confluent-mcp)"
+            echo "  • MCP credentials (environment/mcp-confluent/.env)"
             echo "  • Optionally: saved credentials (.env.local)"
             echo ""
             exit 0

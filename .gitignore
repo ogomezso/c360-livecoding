@@ -8,6 +8,9 @@
 # Claude local settings
 .claude/
 
+# MCP server local configuration (credentials)
+environment/mcp/
+
 # Environment files with credentials
 .env
 .env.local

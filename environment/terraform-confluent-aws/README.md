@@ -198,7 +198,7 @@ Export configuration for the Confluent MCP server:
 
 ```bash
 # Append to MCP server .env file
-terraform output -raw mcp_server_env_config >> ~/.confluent-mcp/.env
+terraform output -raw mcp_server_env_config >> ../mcp-confluent/.env
 
 # Or save to a separate file
 terraform output -raw mcp_server_env_config > confluent-mcp.env

@@ -8,9 +8,13 @@ set -e
 # Supports: VS Code, Claude Code CLI, and Claude Code Desktop App
 # ============================================================================
 
-MCP_HOME="${HOME}/.confluent-mcp"
-MCP_CONFIG_FILE="${MCP_HOME}/claude-mcp-config.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
 ENV_FILE="${MCP_HOME}/.env"
+# @confluentinc/kafka-javascript (a native dependency of mcp-confluent) only ships
+# prebuilt binaries up to Node ABI 127 (Node 22.x) — see reconfigure-mcp.sh — so the
+# server is pinned to this Node version via mise, same as the project .mcp.json.
+MCP_NODE_VERSION="22"
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,14 +49,27 @@ log_section() {
     echo ""
 }
 
-# Check if MCP server is configured
-check_mcp_configured() {
-    if [ ! -f "$MCP_CONFIG_FILE" ]; then
-        log_error "MCP configuration file not found: $MCP_CONFIG_FILE"
-        log_info "Run the provisioning script first: ./environment/mcp-confluent/provision-confluent-mcp.sh"
-        exit 1
+# Resolve the mise-managed Node bin dir to pin in the generated config's PATH.
+# Prints nothing (and warns) if mise or the pinned Node version isn't available —
+# the generated config still works, just without the version pin.
+get_mcp_node_bin_dir() {
+    if ! command -v mise >/dev/null 2>&1; then
+        log_warning "mise not found — generated config won't pin Node ${MCP_NODE_VERSION} (may hit native addon issues on other Node versions)"
+        return 0
     fi
 
+    mise install "node@${MCP_NODE_VERSION}" >/dev/null 2>&1 || true
+    local bin_dir
+    bin_dir="$(mise where "node@${MCP_NODE_VERSION}" 2>/dev/null)/bin"
+    if [ ! -d "$bin_dir" ]; then
+        log_warning "Could not resolve mise node@${MCP_NODE_VERSION} — generated config won't pin a Node version"
+        return 0
+    fi
+    echo "$bin_dir"
+}
+
+# Check if MCP is set up for this project (bootstrap.sh has been run)
+check_mcp_configured() {
     if [ ! -f "$ENV_FILE" ]; then
         log_error "MCP environment file not found: $ENV_FILE"
         log_info "Run the bootstrap script first: ./environment/bootstrap.sh"
@@ -60,6 +77,23 @@ check_mcp_configured() {
     fi
 
     log_success "MCP server files found"
+}
+
+# Print the mcpServers JSON snippet for manual configuration. Takes the
+# PATH env value (with Node pin, if resolved) as its one argument.
+print_mcp_config_snippet() {
+    local path_env="$1"
+    cat <<EOF
+{
+  "mcpServers": {
+    "confluent": {
+      "command": "npx",
+      "args": ["-y", "@confluentinc/mcp-confluent", "--oauth"],
+      "env": {"PATH": "$path_env"}
+    }
+  }
+}
+EOF
 }
 
 # Detect Claude Code environment
@@ -138,16 +172,25 @@ merge_mcp_config() {
         log_info "Created new settings file: $settings_file"
     fi
 
+    local node_bin_dir
+    node_bin_dir="$(get_mcp_node_bin_dir)"
+    local path_env
+    if [ -n "$node_bin_dir" ]; then
+        path_env="${node_bin_dir}:\$PATH"
+    else
+        path_env="\$PATH"
+    fi
+
     # Check if jq is available for JSON manipulation
     if command -v jq >/dev/null 2>&1; then
         # Use jq to merge configurations
         local temp_file=$(mktemp)
 
-        jq --arg env_file "$ENV_FILE" \
+        jq --arg path_env "$path_env" \
            '.mcpServers.confluent = {
                 "command": "npx",
-                "args": ["-y", "@confluentinc/mcp-confluent", "-e", $env_file],
-                "env": {}
+                "args": ["-y", "@confluentinc/mcp-confluent", "--oauth"],
+                "env": {"PATH": $path_env}
             }' "$settings_file" > "$temp_file"
 
         mv "$temp_file" "$settings_file"
@@ -164,17 +207,19 @@ merge_mcp_config() {
             log_warning "mcpServers section already exists, manual merge required"
             log_info "Please manually add the following to your settings:"
             echo ""
-            cat "$MCP_CONFIG_FILE"
+            print_mcp_config_snippet "$path_env"
             echo ""
             return 1
         else
             # Simple case: no mcpServers section exists
             local temp_file=$(mktemp)
 
-            # Remove trailing } and add mcpServers section
-            echo "$existing_content" | sed '$ d' > "$temp_file"
+            # Strip only the trailing "}" (not the whole last line — a fresh
+            # settings file is the single-line "{}" this script itself writes
+            # above, and dropping that whole line would leave no opening "{").
+            printf '%s' "$existing_content" | sed -e '$ s/}[[:space:]]*$//' > "$temp_file"
 
-            # Add comma if file is not empty
+            # Add comma if there's real content before the closing brace
             if [ -s "$temp_file" ] && [ "$(cat "$temp_file" | tr -d '[:space:]')" != "{" ]; then
                 echo "," >> "$temp_file"
             fi
@@ -183,8 +228,8 @@ merge_mcp_config() {
             echo "  \"mcpServers\": {" >> "$temp_file"
             echo "    \"confluent\": {" >> "$temp_file"
             echo "      \"command\": \"npx\"," >> "$temp_file"
-            echo "      \"args\": [\"-y\", \"@confluentinc/mcp-confluent\", \"-e\", \"$ENV_FILE\"]," >> "$temp_file"
-            echo "      \"env\": {}" >> "$temp_file"
+            echo "      \"args\": [\"-y\", \"@confluentinc/mcp-confluent\", \"--oauth\"]," >> "$temp_file"
+            echo "      \"env\": {\"PATH\": \"$path_env\"}" >> "$temp_file"
             echo "    }" >> "$temp_file"
             echo "  }" >> "$temp_file"
             echo "}" >> "$temp_file"
@@ -259,7 +304,13 @@ manual_configuration() {
     echo ""
     echo "Please manually add the following configuration to your Claude Code MCP settings:"
     echo ""
-    cat "$MCP_CONFIG_FILE"
+    local node_bin_dir
+    node_bin_dir="$(get_mcp_node_bin_dir)"
+    if [ -n "$node_bin_dir" ]; then
+        print_mcp_config_snippet "${node_bin_dir}:\$PATH"
+    else
+        print_mcp_config_snippet "\$PATH"
+    fi
     echo ""
     echo ""
     echo "Configuration locations:"

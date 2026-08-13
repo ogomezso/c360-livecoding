@@ -223,7 +223,7 @@ After configuring, restart Claude Code and verify tool availability:
 
 1. **Check configuration:**
    ```bash
-   cat ~/.confluent-mcp/.env | grep -E "FLINK_ORG_ID|SCHEMA_REGISTRY_ENDPOINT|CONFLUENT_CLOUD_API_KEY"
+   cat environment/mcp-confluent/.env | grep -E "FLINK_ORG_ID|SCHEMA_REGISTRY_ENDPOINT|CONFLUENT_CLOUD_API_KEY"
    ```
 
 2. **Reconfigure:**
@@ -236,7 +236,7 @@ After configuring, restart Claude Code and verify tool availability:
 
 ### Missing Specific Tool Category?
 
-Check the required environment variables in this document and ensure they're set in `~/.confluent-mcp/.env`.
+Check the required environment variables in this document and ensure they're set in `environment/mcp-confluent/.env`.
 
 ---
 

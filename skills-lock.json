@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "skills": {
+    "confluent-cloud-cdc-tableflow": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/confluent-cloud-cdc-tableflow/SKILL.md",
+      "computedHash": "144875e3eeb274ce7e2ae2e004e5a38ed1c5d44fafe621c22e4a15834039d362"
+    },
+    "confluent-skill-creator": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/confluent-skill-creator/SKILL.md",
+      "computedHash": "5d9f29c072fd2507fb3ecaeefb54d2bcafe11d21f05e944476481c8f7b8440bf"
+    },
+    "confluent-skill-reviewer": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/confluent-skill-reviewer/SKILL.md",
+      "computedHash": "77c81f43b00eda4bf44e5227c8643645688700697d3d9bfd74ce990dce66df9d"
+    },
+    "developing-kafka-java-client": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/developing-kafka-java-client/SKILL.md",
+      "computedHash": "8a065a8e181e8a7a048b9c9baaaedc289813cc3c3d813b8f5aa57cef5ea32249"
+    },
+    "developing-kafka-python-client": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/developing-kafka-python-client/SKILL.md",
+      "computedHash": "416382b95995974142734e224544426fb9bf787cdb0dbb14f7f7eac01287d1ec"
+    },
+    "flink-udf": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/flink-udf/SKILL.md",
+      "computedHash": "b5abe9a1bf27a0a0decb56ebeae68eab330a988696ed0d12b18dbc9f07d304e7"
+    },
+    "kafka-schema-registry": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kafka-schema-registry/SKILL.md",
+      "computedHash": "1fd0677e5cc692d953a3948f528790d7e5cdb8e748b9382f2b15bcdadb6a3303"
+    },
+    "kafka-streams-programming": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kafka-streams-programming/SKILL.md",
+      "computedHash": "bd9778cc64b5d48126201ed187bad3cca70fa95aa01ec2aa9ad624a7f8f82e04"
+    },
+    "msk-migration": {
+      "source": "confluentinc/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/msk-migration/SKILL.md",
+      "computedHash": "0d22f04a128886a1cdd032d5d4112d08d9386187dad983852da52d08565176b8"
+    }
+  }
+}

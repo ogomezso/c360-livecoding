@@ -30,24 +30,26 @@ That's it! This single command will:
 - ✅ API keys for Kafka + Flink
 
 ### Local Machine
-- ✅ Confluent MCP server (`~/.confluent-mcp/`)
-- ✅ Credentials configured
+- ✅ Credentials exported to `mcp-confluent/.env` (used by demo/producer scripts)
+- ✅ Project `.mcp.json` generated at the repo root (OAuth-based, for Claude Code CLI)
 - ✅ Ready for Claude Code integration
 
 ## 🔗 Claude Code Integration
 
-After bootstrap completes:
+`bootstrap.sh` already generates `.mcp.json` for the Claude Code CLI — no extra step needed there. Open a **new** terminal/session in the repo (Claude Code only reads `.mcp.json` on session start) and test: "List my Kafka topics". The first tool call triggers an interactive Confluent Cloud OAuth login.
+
+If you also use the VS Code extension or the Claude Desktop app, those read from global settings instead of the project `.mcp.json`, so configure them separately:
 
 ```bash
-./configure-claude-mcp.sh
+./configure-claude-mcp.sh --vscode    # VS Code global settings
+./configure-claude-mcp.sh --desktop   # Claude Desktop app
 ```
 
-This automatically:
-1. ✅ Detects your Claude Code environment (VS Code/CLI/Desktop)
-2. ✅ Adds MCP server configuration
-3. ✅ Backs up existing settings
+Changed clusters since the last bootstrap? Regenerate `.mcp.json` without re-provisioning infra:
 
-Then restart Claude Code and test: "List my Kafka topics"
+```bash
+./reconfigure-mcp.sh
+```
 
 ## 🧹 Cleanup
 
@@ -65,7 +67,7 @@ make destroy
 ## 📚 Detailed Documentation
 
 - [Terraform Setup](terraform-confluent-aws/README.md)
-- [MCP Server](mcp-confluent/)
+- [MCP Tools Reference](MCP_TOOLS_REFERENCE.md)
 - [Bootstrap Script Details](bootstrap.sh)
 
 ---

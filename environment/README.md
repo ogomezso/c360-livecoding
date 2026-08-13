@@ -6,11 +6,10 @@ This directory contains automated provisioning for the Customer 360 live coding 
 
 ```
 environment/
-├── mcp-confluent/              # Confluent MCP Server setup
-│   ├── provision-confluent-mcp.sh
-│   ├── test-mcp-server.sh
-│   ├── README.md
-│   └── examples/
+├── bootstrap.sh                # One-command setup: infra + MCP (see below)
+├── reconfigure-mcp.sh          # Re-generate .mcp.json after cluster changes
+├── mcp-confluent/               # Credentials consumed by demo/producer scripts
+│   └── .env                     # Terraform-exported Kafka/Flink creds (gitignored, NOT used by Claude's MCP connection)
 └── terraform-confluent-aws/    # Confluent Cloud infrastructure (Terraform)
     ├── main.tf
     ├── confluent.tf
@@ -51,26 +50,18 @@ terraform apply
 
 ### 2. Set Up MCP Server
 
+MCP setup is part of `./bootstrap.sh` (see [QUICKSTART.md](QUICKSTART.md)) — it exports Terraform credentials to `mcp-confluent/.env` (for demo/producer scripts) and generates a project-level `.mcp.json` at the repo root using Confluent's OAuth login flow, which is what Claude Code actually connects through.
+
+To regenerate `.mcp.json` after infrastructure changes without re-running the full bootstrap:
+
 ```bash
-cd ../mcp-confluent
-
-# Provision MCP server
-./provision-confluent-mcp.sh
-
-# Configure with Terraform outputs
-cd ../terraform-confluent-aws
-terraform output -raw mcp_server_env_config >> ~/.confluent-mcp/.env
-
-# Test setup
-cd ../mcp-confluent
-./test-mcp-server.sh
+./reconfigure-mcp.sh
 ```
 
 **What gets configured:**
-- ✅ MCP server directory structure
-- ✅ Environment configuration with all credentials
-- ✅ Startup and validation scripts
-- ✅ Claude Code integration examples
+- ✅ `mcp-confluent/.env` with Terraform-exported credentials (for demo scripts)
+- ✅ Project `.mcp.json` (OAuth-based `@confluentinc/mcp-confluent`, pinned to a compatible Node version)
+- ✅ Claude Code's stale per-project MCP approval state reset
 
 ## 📋 Prerequisites
 
@@ -157,17 +148,13 @@ cd ../mcp-confluent
 ### Day Before Workshop
 
 ```bash
-# 1. Provision infrastructure
-cd terraform-confluent-aws
-make full-deploy
+# 1. Provision infrastructure + MCP server in one shot
+cd environment
+./bootstrap.sh
 
-# 2. Set up MCP server
-cd ../mcp-confluent
-./provision-confluent-mcp.sh
-terraform -chdir=../terraform-confluent-aws output -raw mcp_server_env_config >> ~/.confluent-mcp/.env
-
-# 3. Verify everything works
-./test-mcp-server.sh
+# 2. Verify Claude Code sees the MCP tools
+# (open a new Claude Code session in the repo, ask it to list Kafka topics —
+#  first tool call triggers the Confluent Cloud OAuth login)
 ```
 
 ### During Workshop
@@ -211,22 +198,17 @@ terraform plan
 ### MCP Server
 
 ```bash
-# List available tools
-npx -y @confluentinc/mcp-confluent \
-  -e ~/.confluent-mcp/.env \
-  --list-tools
+# Regenerate .mcp.json (OAuth-based) after cluster changes
+./reconfigure-mcp.sh
 
-# Start server
-~/.confluent-mcp/start-mcp-server.sh
-
-# Validate setup
-~/.confluent-mcp/validate-setup.sh
+# Reset Claude Code's stale per-project MCP approval state manually
+claude mcp reset-project-choices
 ```
 
 ## 📚 Documentation
 
 - **Terraform Setup**: [terraform-confluent-aws/README.md](terraform-confluent-aws/README.md)
-- **MCP Server Setup**: [mcp-confluent/README.md](mcp-confluent/README.md)
+- **MCP Tools Reference**: [MCP_TOOLS_REFERENCE.md](MCP_TOOLS_REFERENCE.md)
 - **Main Workshop**: [../README.md](../README.md)
 
 ## 🐛 Troubleshooting
@@ -250,12 +232,14 @@ confluent kafka cluster list
 
 **Problem**: "No tools available"
 ```bash
-# Check credentials in .env
-cat ~/.confluent-mcp/.env | grep API_KEY
+# Confirm .mcp.json exists at the repo root and check its contents
+cat ../.mcp.json
 
-# Validate setup
-cd mcp-confluent
-./test-mcp-server.sh
+# Regenerate it and reset stale approval state
+./reconfigure-mcp.sh
+
+# Claude Code only reads .mcp.json on session start — open a fresh
+# terminal/window, don't just reload an existing one
 ```
 
 **Problem**: "Connection timeout"
@@ -287,7 +271,7 @@ terraform output kafka_cluster_bootstrap_endpoint
 ## 📞 Support
 
 - **Terraform Issues**: Check [terraform-confluent-aws/README.md](terraform-confluent-aws/README.md)
-- **MCP Issues**: Check [mcp-confluent/README.md](mcp-confluent/README.md)
+- **MCP Issues**: Check [MCP_TOOLS_REFERENCE.md](MCP_TOOLS_REFERENCE.md)
 - **Confluent Support**: https://support.confluent.io/
 - **Community**: https://forum.confluent.io/
 

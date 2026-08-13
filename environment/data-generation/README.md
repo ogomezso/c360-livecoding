@@ -171,9 +171,10 @@ generate-data.sh
 
 ### Configuration
 
-Producers read Kafka credentials from:
-1. `~/.confluent-mcp/.env` (MCP setup)
-2. `../terraform-confluent-aws/.env.local` (Terraform output)
+Producers read Kafka credentials from, in order:
+1. `../mcp-confluent/.env` (populated by `bootstrap.sh`/`reconfigure-mcp.sh`)
+2. `~/.confluent-mcp/.env` (legacy global location, if present)
+3. `../terraform-confluent-aws/.env.local` (Terraform output)
 
 Required variables:
 - `KAFKA_API_KEY`
@@ -213,7 +214,7 @@ SELECT * FROM `digital.interactions` LIMIT 10;
 ### "Missing required Kafka credentials"
 
 Ensure you've run `bootstrap.sh` or manually configured credentials in:
-- `~/.confluent-mcp/.env`
+- `../mcp-confluent/.env`
 - `../terraform-confluent-aws/.env.local`
 
 ### "Connection refused" or timeout errors

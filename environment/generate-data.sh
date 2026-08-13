@@ -19,6 +19,7 @@ PRODUCERS_DIR="${DATA_GEN_DIR}/producers"
 VENV_DIR="${DATA_GEN_DIR}/.venv"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
 MCP_HOME="${HOME}/.confluent-mcp"
+MCP_LOCAL="${SCRIPT_DIR}/mcp-confluent"
 
 # Colors
 RED='\033[0;31m'
@@ -117,8 +118,13 @@ setup_virtualenv() {
 load_credentials() {
     log_section "Step 3: Loading Kafka Credentials"
 
-    # Try to load from MCP .env first
-    if [ -f "$MCP_HOME/.env" ]; then
+    # Try to load credentials: local project .env first, then ~/.confluent-mcp, then Terraform
+    if [ -f "$MCP_LOCAL/.env" ] && grep -q "KAFKA_API_KEY=.\+" "$MCP_LOCAL/.env" 2>/dev/null; then
+        log_info "Loading credentials from MCP: $MCP_LOCAL/.env"
+        set -a
+        source "$MCP_LOCAL/.env"
+        set +a
+    elif [ -f "$MCP_HOME/.env" ] && grep -q "KAFKA_API_KEY=.\+" "$MCP_HOME/.env" 2>/dev/null; then
         log_info "Loading credentials from MCP: $MCP_HOME/.env"
         set -a
         source "$MCP_HOME/.env"
@@ -132,6 +138,7 @@ load_credentials() {
         log_error "No credentials found"
         echo ""
         echo "Please ensure one of these files exists with Kafka credentials:"
+        echo "  - $MCP_LOCAL/.env"
         echo "  - $MCP_HOME/.env"
         echo "  - $TERRAFORM_DIR/.env.local"
         echo ""

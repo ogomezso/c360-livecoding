@@ -192,7 +192,6 @@ output "mcp_server_env_config" {
     FLINK_ENV_ID=${confluent_environment.customer_360.id}
     FLINK_ORG_ID=${local.org_id}
     FLINK_REST_ENDPOINT=${data.confluent_flink_region.customer_360.rest_endpoint}
-    FLINK_ENV_NAME=${var.environment_display_name}
     FLINK_DATABASE_NAME=${confluent_kafka_cluster.customer_360.id}
     FLINK_CATALOG_NAME=default_catalog
 
