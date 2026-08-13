@@ -25,6 +25,7 @@ ROBOT="🤖"
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-confluent-aws"
+TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-tableflow-aws"
 MCP_ENV_FILE="${SCRIPT_DIR}/environment/mcp-confluent/.env"
 
 echo -e "${RED}${BOLD}"
