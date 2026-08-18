@@ -254,22 +254,7 @@ html, body {
       </div>
     </section>
 
-    <!-- 2 · SECTION: Starting point -->
-    <section class="slide section-break">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-          <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="8" y1="8" x2="24" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="24" y1="8" x2="8" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="slide-eyebrow">01 · Section</div>
-      <h2 class="slide-title">The starting point</h2>
-    </section>
-
-    <!-- 3 · CONTENT: inventory + audit -->
+    <!-- 2 · CONTENT: the pain (visual) -->
     <section class="slide content-slide">
       <div class="slide-logo-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
@@ -281,154 +266,53 @@ html, body {
           <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
         </svg>
       </div>
-      <h2 class="slide-title">Eight topics in the cluster, four that matter here</h2>
+      <h2 class="slide-title">Why this demo — the pain</h2>
       <div class="slide-divider"></div>
-      <div class="slide-body">
-        <ul>
-          <li>Traced the demo environment and inventoried all 8 topics — 4 unrelated quickstart topics (pageviews, clickstream, stock trades, orders) were immediately out of scope.</li>
-          <li>Audited configuration, registered schema, and live samples across the 4 Customer 360 topics: customers, accounts, transactions, digital interactions.</li>
-          <li>Found one topic — digital interactions — carrying real, production-shaped events with no schema registered at all.</li>
-        </ul>
-      </div>
-      <div class="slide-kicker">Governance gap identified before writing a single line of Flink SQL.</div>
-      <div class="slide-num">3 / 13</div>
-    </section>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 500" role="img" aria-label="Four source systems — customer profile, accounts, transactions, digital activity — each updating on a different schedule, converging on an unanswered question: who is this customer, right now.">
+          <defs>
+            <marker id="arrowPain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(4,5,49,0.45)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <rect x="120" y="40" width="260" height="90" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="250" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Customer profile</text>
+            <rect x="180" y="92" width="140" height="24" rx="12" fill="rgba(138,143,168,0.25)"/>
+            <text x="250" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#040531">Rarely updated</text>
 
-    <!-- 4 · SECTION: Governance -->
-    <section class="slide section-break">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-          <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="8" y1="8" x2="24" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="24" y1="8" x2="8" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="420" y="40" width="260" height="90" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="550" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Accounts</text>
+            <rect x="480" y="92" width="140" height="24" rx="12" fill="rgba(255,195,12,0.3)"/>
+            <text x="550" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#040531">Hourly batch</text>
+
+            <rect x="720" y="40" width="260" height="90" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="850" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Transactions</text>
+            <rect x="780" y="92" width="140" height="24" rx="12" fill="rgba(170,43,206,0.18)"/>
+            <text x="850" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#040531">Nightly batch</text>
+
+            <rect x="1020" y="40" width="260" height="90" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="1150" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Digital activity</text>
+            <rect x="1040" y="92" width="220" height="24" rx="12" fill="rgba(1,206,219,0.22)"/>
+            <text x="1150" y="108" text-anchor="middle" font-size="12" font-weight="600" fill="#040531">Streaming — but siloed</text>
+
+            <line x1="250" y1="130" x2="700" y2="322" stroke="rgba(4,5,49,0.45)" stroke-width="1.4" marker-end="url(#arrowPain)"/>
+            <line x1="550" y1="130" x2="700" y2="322" stroke="rgba(4,5,49,0.45)" stroke-width="1.4" marker-end="url(#arrowPain)"/>
+            <line x1="850" y1="130" x2="700" y2="322" stroke="rgba(4,5,49,0.45)" stroke-width="1.4" marker-end="url(#arrowPain)"/>
+            <line x1="1150" y1="130" x2="700" y2="322" stroke="rgba(4,5,49,0.45)" stroke-width="1.4" marker-end="url(#arrowPain)"/>
+
+            <rect x="480" y="325" width="440" height="150" rx="14" fill="rgba(170,43,206,0.06)" stroke="#AA2BCE" stroke-width="1.6" stroke-dasharray="7 5"/>
+            <text x="700" y="385" text-anchor="middle" font-size="52" font-weight="700" fill="#AA2BCE">?</text>
+            <text x="700" y="430" text-anchor="middle" font-size="19" font-weight="700" fill="#040531">Who is this customer, right now?</text>
+            <text x="700" y="455" text-anchor="middle" font-size="14" fill="#040531" opacity="0.7">Support, risk, and marketing each get a different, stale answer.</text>
+          </g>
         </svg>
       </div>
-      <div class="slide-eyebrow">02 · Section</div>
-      <h2 class="slide-title">Closing the governance gap</h2>
+      <div class="slide-kicker">Real-time context isn't a nice-to-have anymore — it's the baseline customers and regulators expect.</div>
+      <div class="slide-num">2 / 10</div>
     </section>
 
-    <!-- 5 · TWO-COLUMN: before/after schema -->
-    <section class="slide two-column">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
-          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
-          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
-        </svg>
-      </div>
-      <h2 class="slide-title">The same event, before and after</h2>
-      <div class="slide-divider"></div>
-      <div class="col-left">
-        <p class="col-label">Before — schemaless JSON</p>
-        <pre>{
-  "event_id": "2da9c602-3479-462f…",
-  "customer_id": "8cd835d4-4e51…",
-  "event_type": "LOGIN",
-  "channel": "WEB",
-  "session_id": "74a0a791-eb3f…",
-  "ts": 1785526697826
-}</pre>
-      </div>
-      <div class="col-right">
-        <p class="col-label">After — registered Avro schema, id 100008</p>
-        <table class="schema">
-          <tr><td>event_id</td><td class="type">string</td></tr>
-          <tr><td>customer_id</td><td class="type">string</td></tr>
-          <tr><td>event_type</td><td class="type">string</td></tr>
-          <tr><td>channel</td><td class="type">string</td></tr>
-          <tr><td>session_id</td><td class="type">string</td></tr>
-          <tr><td>ts</td><td class="type">long</td></tr>
-        </table>
-      </div>
-      <div class="slide-kicker">Same partitions, same retention, same key — zero disruption to whatever is already producing.</div>
-      <div class="slide-num">5 / 13</div>
-    </section>
-
-    <!-- 6 · SECTION: Data -->
-    <section class="slide section-break">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-          <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="8" y1="8" x2="24" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="24" y1="8" x2="8" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="slide-eyebrow">03 · Section</div>
-      <h2 class="slide-title">What the data told us</h2>
-    </section>
-
-    <!-- 7 · CONTENT: insight bars -->
-    <section class="slide content-slide">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
-          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
-          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
-        </svg>
-      </div>
-      <h2 class="slide-title">The shape of the dataset — from ~55 records per topic</h2>
-      <div class="slide-divider"></div>
-      <div class="slide-body">
-        <div class="bars-row">
-          <div class="bar-group">
-            <h4>Customer segment</h4>
-            <div class="bar-item"><div class="bar-top"><span>Retail</span><span class="val">66.7%</span></div><div class="bar-track"><div class="bar-fill" style="width:66.7%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>Premier</span><span class="val">25.9%</span></div><div class="bar-track"><div class="bar-fill" style="width:25.9%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>Private</span><span class="val">7.4%</span></div><div class="bar-track"><div class="bar-fill" style="width:7.4%"></div></div></div>
-          </div>
-          <div class="bar-group">
-            <h4>Account product mix</h4>
-            <div class="bar-item"><div class="bar-top"><span>Checking</span><span class="val">42.6%</span></div><div class="bar-track"><div class="bar-fill" style="width:42.6%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>Savings</span><span class="val">27.8%</span></div><div class="bar-track"><div class="bar-fill" style="width:27.8%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>Credit card</span><span class="val">16.7%</span></div><div class="bar-track"><div class="bar-fill" style="width:16.7%"></div></div></div>
-          </div>
-          <div class="bar-group">
-            <h4>Digital interaction type</h4>
-            <div class="bar-item"><div class="bar-top"><span>Logout</span><span class="val">27.3%</span></div><div class="bar-track"><div class="bar-fill" style="width:27.3%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>Login</span><span class="val">18.2%</span></div><div class="bar-track"><div class="bar-fill" style="width:18.2%"></div></div></div>
-            <div class="bar-item"><div class="bar-top"><span>View balance</span><span class="val">16.4%</span></div><div class="bar-track"><div class="bar-fill" style="width:16.4%"></div></div></div>
-          </div>
-        </div>
-        <div class="watch-notes">
-          <div class="watch-note">
-            <span class="wlabel">Watch item</span>
-            <p>64 of 64 sampled transactions were debits — no salary, deposit, or incoming-transfer events yet, so net amounts only show spend.</p>
-          </div>
-          <div class="watch-note">
-            <span class="wlabel">Watch item</span>
-            <p>Digital channels (web/mobile/tablet) and transaction channels (ATM/POS/online/mobile) only share "mobile" — a real omnichannel view needs a mapping layer.</p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-num">7 / 13</div>
-    </section>
-
-    <!-- 8 · SECTION: Build -->
-    <section class="slide section-break">
-      <div class="slide-logo-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-          <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="8" y1="8" x2="24" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="24" y1="8" x2="8" y2="24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="slide-eyebrow">04 · Section</div>
-      <h2 class="slide-title">Building the real-time view</h2>
-    </section>
-
-    <!-- 9 · CONTENT DARK: architecture diagram -->
+    <!-- 3 · CONTENT DARK: the solution architecture (visual) -->
     <section class="slide content-slide dark">
       <div class="slide-logo-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
@@ -440,93 +324,512 @@ html, body {
           <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" letter-spacing="2">CONFLUENT</text>
         </svg>
       </div>
-      <h2 class="slide-title">One raw topic, three parallel rollups, one converged view</h2>
+      <h2 class="slide-title">The solution — an event-streaming architecture</h2>
       <div class="slide-divider" style="background: rgba(0,153,255,0.5);"></div>
       <div class="diagram-wrap">
-        <svg viewBox="0 0 1010 560" role="img" aria-label="Pipeline diagram: digital.interactions is parsed and schema-enforced into digital.interactions.avro; corebank.customers, corebank.accounts, corebank.transactions, and digital.interactions.avro feed three Flink aggregation stages; corebank.customers plus the three aggregates are left-joined into the final c360_snapshot table.">
+        <svg viewBox="0 0 1400 500" role="img" aria-label="An AI coding assistant — Claude Code, IBM Bob, or GitHub Copilot — paired with Confluent MCP builds and governs the pipeline via natural language. Four source systems feed Kafka topics, which Flink continuously joins into the c360_snapshot, all governed end-to-end by Schema Registry, serving apps, dashboards, and APIs in real time.">
           <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker id="arrowSol" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
             </marker>
           </defs>
-          <g color="rgba(255,255,255,0.55)">
-            <rect x="770" y="26" width="220" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4" />
-            <text x="880" y="50" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="Inter, sans-serif">digital.interactions</text>
-            <text x="880" y="67" text-anchor="middle" font-size="11" fill="currentColor" font-family="Inter, sans-serif">raw JSON · no schema</text>
+          <g font-family="Inter, sans-serif">
+            <rect x="550" y="15" width="460" height="100" rx="10" fill="rgba(58,33,237,0.14)" stroke="#3A21ED" stroke-width="1.8"/>
+            <text x="780" y="42" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">AI coding assistant + Confluent MCP</text>
+            <text x="780" y="62" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.75)">builds Flink SQL, schemas &amp; tags — via natural language</text>
+            <rect x="652" y="75" width="100" height="20" rx="10" fill="rgba(255,255,255,0.12)"/>
+            <text x="702" y="89" text-anchor="middle" font-size="10" font-weight="600" fill="#FFFFFF">Claude Code</text>
+            <rect x="760" y="75" width="70" height="20" rx="10" fill="rgba(255,255,255,0.12)"/>
+            <text x="795" y="89" text-anchor="middle" font-size="10" font-weight="600" fill="#FFFFFF">IBM Bob</text>
+            <rect x="838" y="75" width="70" height="20" rx="10" fill="rgba(255,255,255,0.12)"/>
+            <text x="873" y="89" text-anchor="middle" font-size="10" font-weight="600" fill="#FFFFFF">Copilot</text>
+
+            <rect x="300" y="170" width="1000" height="210" rx="14" fill="none" stroke="#01CEDB" stroke-width="1.4" stroke-dasharray="7 5"/>
+            <text x="325" y="197" font-size="14" font-weight="600" fill="#01CEDB">Schema Registry — governs every event, at write time</text>
+
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="40" y="220" width="220" height="100" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4"/>
+              <text x="150" y="262" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">4 source systems</text>
+              <text x="150" y="283" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.65)">profile · accounts ·</text>
+              <text x="150" y="298" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.65)">transactions · digital</text>
+            </g>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="320" y="220" width="260" height="100" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4"/>
+              <text x="450" y="266" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Kafka topics</text>
+              <text x="450" y="288" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.65)">event-streaming backbone</text>
+            </g>
+            <g color="#0099FF">
+              <rect x="640" y="220" width="280" height="100" rx="10" fill="rgba(0,153,255,0.1)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="780" y="266" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Flink SQL</text>
+              <text x="780" y="288" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.75)">continuous joins + aggregation</text>
+            </g>
+            <g color="#01CEDB">
+              <rect x="980" y="220" width="300" height="100" rx="10" fill="rgba(1,206,219,0.12)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="1130" y="266" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">c360_snapshot</text>
+              <text x="1130" y="288" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.75)">compacted · always current</text>
+            </g>
+
+            <g color="rgba(255,255,255,0.6)">
+              <line x1="780" y1="115" x2="780" y2="218" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="260" y1="270" x2="320" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="580" y1="270" x2="640" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="920" y1="270" x2="980" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="1130" y1="320" x2="1130" y2="415" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+            </g>
+            <text x="1130" y="440" text-anchor="middle" font-size="13" fill="#FFFFFF">Serves apps, dashboards, and APIs — in real time</text>
           </g>
-          <line x1="880" y1="78" x2="880" y2="148" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="895" y="118">parse + enforce</text>
-          <text class="arrow-label" x="895" y="135">Avro schema</text>
+        </svg>
+      </div>
+      <div class="slide-kicker">Same technology stack already running in Confluent Cloud — nothing here is hypothetical.</div>
+      <div class="slide-num">3 / 10</div>
+    </section>
 
-          <g color="rgba(255,255,255,0.35)">
-            <rect x="20" y="150" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
-            <text x="130" y="185" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="Inter, sans-serif">corebank.customers</text>
+    <!-- 4 · CONTENT: the how — data roadmap (visual) -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">The how — a data-first path to the snapshot</h2>
+      <div class="slide-divider"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 400" role="img" aria-label="Four-step data path: discover the topics, govern them with schemas, understand the data shape, then build the joined snapshot.">
+          <g font-family="Inter, sans-serif">
+            <line x1="150" y1="140" x2="1250" y2="140" stroke="rgba(4,5,49,0.15)" stroke-width="3"/>
+
+            <circle cx="150" cy="140" r="34" fill="#0099FF"/>
+            <text x="150" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">1</text>
+            <text x="150" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Discover</text>
+            <text x="150" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Inventory every topic</text>
+            <text x="150" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">& audit schemas</text>
+
+            <circle cx="517" cy="140" r="34" fill="#0099FF"/>
+            <text x="517" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">2</text>
+            <text x="517" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Govern</text>
+            <text x="517" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Enforce a schema before</text>
+            <text x="517" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">transforming anything</text>
+
+            <circle cx="883" cy="140" r="34" fill="#0099FF"/>
+            <text x="883" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">3</text>
+            <text x="883" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Understand</text>
+            <text x="883" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Profile volumes,</text>
+            <text x="883" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">segments, and gaps</text>
+
+            <circle cx="1250" cy="140" r="34" fill="#01CEDB"/>
+            <text x="1250" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">4</text>
+            <text x="1250" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Build</text>
+            <text x="1250" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Join & aggregate into</text>
+            <text x="1250" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">one live snapshot</text>
           </g>
-          <g color="rgba(255,255,255,0.35)">
-            <rect x="270" y="150" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
-            <text x="380" y="185" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="Inter, sans-serif">corebank.accounts</text>
+        </svg>
+      </div>
+      <div class="slide-kicker">Four steps, one dataset — each one gets its own section in this recap.</div>
+      <div class="slide-num">4 / 10</div>
+    </section>
+
+    <!-- 5 · CONTENT: sources → Kafka → schema enforcement → tagging (visual) -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">From four systems to a governed set of topics</h2>
+      <div class="slide-divider"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 720" role="img" aria-label="Four banking systems flow into four Kafka topics. Three already carry an AVRO schema; digital interactions does not. A Flink SQL statement parses and enforces a schema, producing digital.interactions.avro. All five topics — the four governed plus the original raw one — are then tagged for governance.">
+          <defs>
+            <marker id="arrowSrc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(4,5,49,0.45)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <rect x="40" y="20" width="300" height="80" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="190" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#040531">Core banking</text>
+            <text x="190" y="74" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">customer profiles</text>
+
+            <rect x="380" y="20" width="300" height="80" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="530" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#040531">Account system</text>
+            <text x="530" y="74" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">balances, products, status</text>
+
+            <rect x="720" y="20" width="300" height="80" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="870" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#040531">Transaction processing</text>
+            <text x="870" y="74" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">amounts, merchants, channel</text>
+
+            <rect x="1060" y="20" width="300" height="80" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="1210" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="#040531">Digital channels</text>
+            <text x="1210" y="74" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">login, transfer, payment events</text>
+
+            <line x1="190" y1="100" x2="190" y2="138" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+            <line x1="530" y1="100" x2="530" y2="138" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+            <line x1="870" y1="100" x2="870" y2="138" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+            <line x1="1210" y1="100" x2="1210" y2="138" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+
+            <rect x="20" y="140" width="1360" height="145" rx="14" fill="rgba(0,153,255,0.05)" stroke="#0099FF" stroke-width="1.4" stroke-dasharray="7 5"/>
+            <text x="45" y="163" font-size="13" font-weight="600" fill="#14449A">Kafka cluster · 8 topics — these 4 are Customer 360, 4 quickstart topics filtered out</text>
+
+            <rect x="40" y="175" width="300" height="95" rx="10" fill="rgba(0,153,255,0.08)" stroke="#0099FF" stroke-width="1.5"/>
+            <text x="190" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">corebank.customers</text>
+            <text x="190" y="221" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">compacted · infinite retention</text>
+            <rect x="130" y="232" width="120" height="22" rx="11" fill="rgba(1,206,219,0.25)"/>
+            <text x="190" y="247" text-anchor="middle" font-size="10.5" font-weight="600" fill="#040531">AVRO schema</text>
+
+            <rect x="380" y="175" width="300" height="95" rx="10" fill="rgba(0,153,255,0.08)" stroke="#0099FF" stroke-width="1.5"/>
+            <text x="530" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">corebank.accounts</text>
+            <text x="530" y="221" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">compacted · infinite retention</text>
+            <rect x="470" y="232" width="120" height="22" rx="11" fill="rgba(1,206,219,0.25)"/>
+            <text x="530" y="247" text-anchor="middle" font-size="10.5" font-weight="600" fill="#040531">AVRO schema</text>
+
+            <rect x="720" y="175" width="300" height="95" rx="10" fill="rgba(0,153,255,0.08)" stroke="#0099FF" stroke-width="1.5"/>
+            <text x="870" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">corebank.transactions</text>
+            <text x="870" y="221" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">30-day retention</text>
+            <rect x="810" y="232" width="120" height="22" rx="11" fill="rgba(1,206,219,0.25)"/>
+            <text x="870" y="247" text-anchor="middle" font-size="10.5" font-weight="600" fill="#040531">AVRO schema</text>
+
+            <rect x="1060" y="175" width="300" height="95" rx="10" fill="rgba(170,43,206,0.07)" stroke="#AA2BCE" stroke-width="1.6"/>
+            <text x="1210" y="202" text-anchor="middle" font-size="13" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">digital.interactions</text>
+            <text x="1210" y="221" text-anchor="middle" font-size="11" fill="#040531" opacity="0.65">30-day retention</text>
+            <rect x="1120" y="232" width="180" height="22" rx="11" fill="rgba(170,43,206,0.22)"/>
+            <text x="1210" y="247" text-anchor="middle" font-size="10.5" font-weight="700" fill="#AA2BCE">NO SCHEMA REGISTERED</text>
+
+            <line x1="190" y1="270" x2="190" y2="528" stroke="rgba(4,5,49,0.35)" stroke-width="1.4" marker-end="url(#arrowSrc)"/>
+            <line x1="530" y1="270" x2="530" y2="528" stroke="rgba(4,5,49,0.35)" stroke-width="1.4" marker-end="url(#arrowSrc)"/>
+            <line x1="870" y1="270" x2="870" y2="528" stroke="rgba(4,5,49,0.35)" stroke-width="1.4" marker-end="url(#arrowSrc)"/>
+            <line x1="1210" y1="270" x2="1210" y2="298" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+
+            <rect x="1060" y="300" width="300" height="78" rx="10" fill="rgba(0,153,255,0.1)" stroke="#0099FF" stroke-width="1.6"/>
+            <text x="1210" y="326" text-anchor="middle" font-size="13" font-weight="700" fill="#040531">Flink SQL</text>
+            <text x="1210" y="345" text-anchor="middle" font-size="10.5" fill="#040531" opacity="0.75">parses JSON, enforces AVRO,</text>
+            <text x="1210" y="360" text-anchor="middle" font-size="10.5" fill="#040531" opacity="0.75">replicates every new event</text>
+
+            <line x1="1210" y1="378" x2="1210" y2="401" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+
+            <rect x="1060" y="403" width="300" height="95" rx="10" fill="rgba(1,206,219,0.12)" stroke="#01CEDB" stroke-width="1.6"/>
+            <text x="1210" y="428" text-anchor="middle" font-size="12.5" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">digital.interactions.avro</text>
+            <text x="1210" y="447" text-anchor="middle" font-size="10.5" fill="#040531" opacity="0.7">AVRO schema · id 100008</text>
+            <text x="1210" y="464" text-anchor="middle" font-size="10" fill="#040531" opacity="0.55">same partitions, retention, and key</text>
+            <text x="1210" y="478" text-anchor="middle" font-size="10" fill="#040531" opacity="0.55">— zero disruption to producers</text>
+
+            <line x1="1210" y1="498" x2="1210" y2="528" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowSrc)"/>
+
+            <rect x="20" y="530" width="1360" height="170" rx="14" fill="rgba(4,5,49,0.03)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4" stroke-dasharray="7 5"/>
+            <text x="45" y="553" font-size="13" font-weight="600" fill="#14449A">Governance — tags applied across the cluster</text>
+
+            <g font-family="'SF Mono', Menlo, monospace">
+              <rect x="40" y="566" width="248" height="115" rx="10" fill="rgba(0,153,255,0.06)" stroke="rgba(0,153,255,0.4)" stroke-width="1.2"/>
+              <text x="164" y="589" text-anchor="middle" font-size="11.5" font-weight="700" fill="#040531">corebank.customers</text>
+              <rect x="60" y="599" width="80" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="100" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">c360</text>
+              <rect x="148" y="599" width="120" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="208" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">source</text>
+
+              <rect x="308" y="566" width="248" height="115" rx="10" fill="rgba(0,153,255,0.06)" stroke="rgba(0,153,255,0.4)" stroke-width="1.2"/>
+              <text x="432" y="589" text-anchor="middle" font-size="11.5" font-weight="700" fill="#040531">corebank.accounts</text>
+              <rect x="328" y="599" width="80" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="368" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">c360</text>
+              <rect x="416" y="599" width="120" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="476" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">source</text>
+
+              <rect x="576" y="566" width="248" height="115" rx="10" fill="rgba(0,153,255,0.06)" stroke="rgba(0,153,255,0.4)" stroke-width="1.2"/>
+              <text x="700" y="589" text-anchor="middle" font-size="11.5" font-weight="700" fill="#040531">corebank.transactions</text>
+              <rect x="596" y="599" width="80" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="636" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">c360</text>
+              <rect x="684" y="599" width="120" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="744" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">source</text>
+
+              <rect x="844" y="566" width="248" height="115" rx="10" fill="rgba(0,153,255,0.06)" stroke="rgba(0,153,255,0.4)" stroke-width="1.2"/>
+              <text x="968" y="589" text-anchor="middle" font-size="11" font-weight="700" fill="#040531">digital.interactions.avro</text>
+              <rect x="864" y="599" width="80" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="904" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">c360</text>
+              <rect x="952" y="599" width="120" height="23" rx="11" fill="rgba(0,153,255,0.18)"/>
+              <text x="1012" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A" font-family="Inter, sans-serif">source</text>
+
+              <rect x="1112" y="566" width="248" height="115" rx="10" fill="rgba(170,43,206,0.06)" stroke="rgba(170,43,206,0.4)" stroke-width="1.2"/>
+              <text x="1236" y="589" text-anchor="middle" font-size="11" font-weight="700" fill="#040531">digital.interactions</text>
+              <rect x="1132" y="599" width="80" height="23" rx="11" fill="rgba(170,43,206,0.18)"/>
+              <text x="1172" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#AA2BCE" font-family="Inter, sans-serif">c360</text>
+              <rect x="1220" y="599" width="120" height="23" rx="11" fill="rgba(170,43,206,0.18)"/>
+              <text x="1280" y="614" text-anchor="middle" font-size="10.5" font-weight="600" fill="#AA2BCE" font-family="Inter, sans-serif">raw</text>
+            </g>
           </g>
-          <g color="rgba(255,255,255,0.35)">
-            <rect x="520" y="150" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
-            <text x="630" y="185" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="Inter, sans-serif">corebank.transactions</text>
+        </svg>
+      </div>
+      <div class="slide-kicker">Governance gap closed before writing a single line of C360 join logic — every topic is now schema-checked and tagged.</div>
+      <div class="slide-num">5 / 10</div>
+    </section>
+
+    <!-- 6 · CONTENT: dataset analysis, built autonomously (visual) -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">One prompt, one autonomous dataset analysis</h2>
+      <div class="slide-divider"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 560" role="img" aria-label="A single natural-language prompt asking for a dataset analysis is handed to an AI coding assistant — Claude Code, IBM Bob, or GitHub Copilot — paired with the Confluent MCP server, which reads every topic live and produces a config and schema audit, data-quality scoring, and business insights as a markdown report — with no SQL written by hand. Below, the resulting insight bars for customer segment, account product mix, and digital interaction type, plus two watch items the analysis flagged.">
+          <defs>
+            <marker id="arrowAI" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(4,5,49,0.45)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <rect x="40" y="30" width="420" height="160" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <rect x="60" y="45" width="94" height="22" rx="11" fill="rgba(4,5,49,0.08)"/>
+            <text x="107" y="60" text-anchor="middle" font-size="10.5" font-weight="700" fill="#040531" opacity="0.7">PROMPT 8</text>
+            <text x="60" y="92" font-size="13" fill="#040531" opacity="0.85">"Build a Dataset Analysis of the</text>
+            <text x="60" y="112" font-size="13" fill="#040531" opacity="0.85">c360+source topics — schema,</text>
+            <text x="60" y="132" font-size="13" fill="#040531" opacity="0.85">samples, data quality, and</text>
+            <text x="60" y="152" font-size="13" fill="#040531" opacity="0.85">recommendations."</text>
+
+            <line x1="460" y1="110" x2="518" y2="110" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowAI)"/>
+
+            <rect x="520" y="30" width="330" height="160" rx="10" fill="rgba(0,153,255,0.1)" stroke="#0099FF" stroke-width="1.8"/>
+            <text x="685" y="68" text-anchor="middle" font-size="14.5" font-weight="700" fill="#040531">Your AI coding assistant</text>
+            <text x="685" y="88" text-anchor="middle" font-size="12.5" fill="#040531" opacity="0.8">+ Confluent MCP</text>
+            <rect x="545" y="100" width="110" height="24" rx="12" fill="rgba(0,153,255,0.18)"/>
+            <text x="600" y="116" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A">Claude Code</text>
+            <rect x="665" y="100" width="80" height="24" rx="12" fill="rgba(0,153,255,0.18)"/>
+            <text x="705" y="116" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A">IBM Bob</text>
+            <rect x="755" y="100" width="80" height="24" rx="12" fill="rgba(0,153,255,0.18)"/>
+            <text x="795" y="116" text-anchor="middle" font-size="10.5" font-weight="600" fill="#14449A">Copilot</text>
+            <text x="685" y="150" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">reads live topics, schemas &amp;</text>
+            <text x="685" y="167" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">samples — no SQL written by hand</text>
+
+            <line x1="850" y1="110" x2="908" y2="110" stroke="rgba(4,5,49,0.45)" stroke-width="1.6" marker-end="url(#arrowAI)"/>
+
+            <rect x="910" y="30" width="450" height="160" rx="10" fill="rgba(1,206,219,0.1)" stroke="#01CEDB" stroke-width="1.6"/>
+            <text x="930" y="58" font-size="13.5" font-weight="700" fill="#040531">Result — one pass, zero manual SQL</text>
+            <text x="930" y="86" font-size="11.5" fill="#040531" opacity="0.85">• Topic config + AVRO schema audit</text>
+            <text x="930" y="108" font-size="11.5" fill="#040531" opacity="0.85">• Live samples + data-quality scoring</text>
+            <text x="930" y="130" font-size="11.5" fill="#040531" opacity="0.85">• Business insights & snapshot design</text>
+            <text x="930" y="152" font-size="11.5" fill="#040531" opacity="0.85">• Saved as a markdown report</text>
+
+            <text x="700" y="222" text-anchor="middle" font-size="15" font-weight="700" fill="#14449A">What the data told us — from ~55 records per topic</text>
+            <line x1="40" y1="234" x2="1360" y2="234" stroke="rgba(4,5,49,0.15)" stroke-width="1.4"/>
+
+            <text x="60" y="278" font-size="13" font-weight="700" fill="#040531">Customer segment</text>
+            <text x="60" y="313" font-size="12" fill="#040531">Retail</text>
+            <text x="440" y="313" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">66.7%</text>
+            <rect x="60" y="320" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="60" y="320" width="254" height="10" rx="5" fill="#0099FF"/>
+            <text x="60" y="356" font-size="12" fill="#040531">Premier</text>
+            <text x="440" y="356" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">25.9%</text>
+            <rect x="60" y="363" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="60" y="363" width="98" height="10" rx="5" fill="#0099FF"/>
+            <text x="60" y="399" font-size="12" fill="#040531">Private</text>
+            <text x="440" y="399" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">7.4%</text>
+            <rect x="60" y="406" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="60" y="406" width="28" height="10" rx="5" fill="#0099FF"/>
+
+            <text x="510" y="278" font-size="13" font-weight="700" fill="#040531">Account product mix</text>
+            <text x="510" y="313" font-size="12" fill="#040531">Checking</text>
+            <text x="890" y="313" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">42.6%</text>
+            <rect x="510" y="320" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="510" y="320" width="162" height="10" rx="5" fill="#0099FF"/>
+            <text x="510" y="356" font-size="12" fill="#040531">Savings</text>
+            <text x="890" y="356" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">27.8%</text>
+            <rect x="510" y="363" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="510" y="363" width="106" height="10" rx="5" fill="#0099FF"/>
+            <text x="510" y="399" font-size="12" fill="#040531">Credit card</text>
+            <text x="890" y="399" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">16.7%</text>
+            <rect x="510" y="406" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="510" y="406" width="63" height="10" rx="5" fill="#0099FF"/>
+
+            <text x="960" y="278" font-size="13" font-weight="700" fill="#040531">Digital interaction type</text>
+            <text x="960" y="313" font-size="12" fill="#040531">Logout</text>
+            <text x="1340" y="313" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">27.3%</text>
+            <rect x="960" y="320" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="960" y="320" width="104" height="10" rx="5" fill="#0099FF"/>
+            <text x="960" y="356" font-size="12" fill="#040531">Login</text>
+            <text x="1340" y="356" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">18.2%</text>
+            <rect x="960" y="363" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="960" y="363" width="69" height="10" rx="5" fill="#0099FF"/>
+            <text x="960" y="399" font-size="12" fill="#040531">View balance</text>
+            <text x="1340" y="399" text-anchor="end" font-size="12" font-weight="600" fill="#14449A">16.4%</text>
+            <rect x="960" y="406" width="380" height="10" rx="5" fill="rgba(4,5,49,0.09)"/>
+            <rect x="960" y="406" width="62" height="10" rx="5" fill="#0099FF"/>
+
+            <line x1="40" y1="442" x2="1360" y2="442" stroke="rgba(4,5,49,0.15)" stroke-width="1.4"/>
+            <text x="60" y="466" font-size="11" font-weight="700" fill="#AA2BCE" letter-spacing="0.5">WATCH ITEM</text>
+            <text x="60" y="487" font-size="12" fill="#040531" opacity="0.8">64 of 64 sampled transactions were debits — no salary,</text>
+            <text x="60" y="505" font-size="12" fill="#040531" opacity="0.8">deposit, or incoming-transfer events yet, so net amounts</text>
+            <text x="60" y="523" font-size="12" fill="#040531" opacity="0.8">only show spend.</text>
+
+            <text x="730" y="466" font-size="11" font-weight="700" fill="#AA2BCE" letter-spacing="0.5">WATCH ITEM</text>
+            <text x="730" y="487" font-size="12" fill="#040531" opacity="0.8">Digital channels (web/mobile/tablet) and transaction</text>
+            <text x="730" y="505" font-size="12" fill="#040531" opacity="0.8">channels (ATM/POS/online/mobile) only share "mobile" —</text>
+            <text x="730" y="523" font-size="12" fill="#040531" opacity="0.8">a real omnichannel view needs a mapping layer.</text>
           </g>
-          <g color="#01CEDB">
-            <rect x="770" y="150" width="220" height="60" rx="8" fill="rgba(1,206,219,0.12)" stroke="currentColor" stroke-width="1.6" />
-            <text x="880" y="185" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="Inter, sans-serif">digital.interactions.avro</text>
-          </g>
+        </svg>
+      </div>
+      <div class="slide-kicker">Confluent MCP gives any AI coding assistant live read access to every topic — it designed the c360_snapshot from what it found.</div>
+      <div class="slide-num">6 / 10</div>
+    </section>
 
-          <line x1="380" y1="210" x2="190" y2="298" stroke="rgba(255,255,255,0.55)" stroke-width="1.3" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="200" y="245">GROUP BY</text>
-          <text class="arrow-label" x="200" y="262">customer_id</text>
+    <!-- 7 · CONTENT DARK: architecture + data contracts (visual) -->
+    <section class="slide content-slide dark">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">Three rollups, one converged view — with the data contract for each</h2>
+      <div class="slide-divider" style="background: rgba(0,153,255,0.5);"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1600 720" role="img" aria-label="corebank.accounts, corebank.transactions, and digital.interactions.avro feed three Flink aggregation stages, each with its own data contract: accounts_by_customer, txn_activity_by_customer, and recent_digital_interactions. corebank.customers plus the three aggregates are left-joined into the final c360_snapshot table, whose full 23-column data contract is shown grouped by origin.">
+          <defs>
+            <marker id="arrowBuild" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="100" y="15" width="320" height="70" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
+              <text x="260" y="55" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">corebank.customers</text>
+            </g>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="460" y="15" width="320" height="70" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
+              <text x="620" y="55" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">corebank.accounts</text>
+            </g>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="820" y="15" width="320" height="70" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
+              <text x="980" y="55" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">corebank.transactions</text>
+            </g>
+            <g color="#01CEDB">
+              <rect x="1180" y="15" width="320" height="70" rx="8" fill="rgba(1,206,219,0.12)" stroke="currentColor" stroke-width="1.6" />
+              <text x="1340" y="55" text-anchor="middle" font-size="13" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">digital.interactions.avro</text>
+            </g>
 
-          <line x1="630" y1="210" x2="530" y2="298" stroke="rgba(255,255,255,0.55)" stroke-width="1.3" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="560" y="245">JOIN account_id</text>
-          <text class="arrow-label" x="560" y="262">GROUP BY · 30d</text>
+            <line x1="620" y1="85" x2="350" y2="123" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="400" y="108">GROUP BY customer_id</text>
+            <line x1="670" y1="85" x2="650" y2="123" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="562" y="106" font-size="11">enrich account_id→customer_id</text>
+            <line x1="980" y1="85" x2="900" y2="123" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="905" y="108">JOIN account_id · 30d</text>
+            <line x1="1340" y1="85" x2="1320" y2="123" stroke="#01CEDB" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="1195" y="108" fill="#01CEDB">ROW_NUMBER() top-3, pivoted</text>
 
-          <line x1="410" y1="210" x2="470" y2="298" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="392" y="284" font-size="12">enrich account→customer</text>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="40" y="125" width="480" height="220" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
+              <text x="280" y="156" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">accounts_by_customer</text>
+              <text x="280" y="174" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.6)">GROUP BY customer_id</text>
+              <line x1="60" y1="184" x2="500" y2="184" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+              <text x="60" y="207" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">customer_id     STRING  (PK)</text>
+              <text x="60" y="226" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">account_count   BIGINT</text>
+              <text x="60" y="245" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">total_balance   DOUBLE</text>
+              <text x="60" y="264" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">accounts        ARRAY&lt;ROW&lt;…&gt;&gt;</text>
+              <text x="80" y="283" font-size="10" fill="rgba(255,255,255,0.55)" font-family="'SF Mono', Menlo, monospace">↳ account_id · product_type ·</text>
+              <text x="80" y="299" font-size="10" fill="rgba(255,255,255,0.55)" font-family="'SF Mono', Menlo, monospace">↳ status · balance · currency</text>
+            </g>
 
-          <line x1="870" y1="210" x2="835" y2="298" stroke="#01CEDB" stroke-width="1.3" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="845" y="245" fill="#01CEDB">ROW_NUMBER()</text>
-          <text class="arrow-label" x="845" y="262" fill="#01CEDB">top 3, pivoted</text>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="560" y="125" width="480" height="220" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
+              <text x="800" y="156" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">txn_activity_by_customer</text>
+              <text x="800" y="174" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.6)">JOIN account_id · GROUP BY 30d</text>
+              <line x1="580" y1="184" x2="1020" y2="184" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+              <text x="580" y="207" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">customer_id     STRING  (PK)</text>
+              <text x="580" y="226" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">txn_count_30d   BIGINT</text>
+              <text x="580" y="245" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">net_amount_30d  DOUBLE</text>
+              <text x="580" y="264" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">last_txn_ts     TIMESTAMP(3)</text>
+            </g>
 
-          <g color="rgba(255,255,255,0.35)">
-            <rect x="40" y="300" width="260" height="60" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
-            <text x="170" y="331" text-anchor="middle" font-size="12.5" fill="#FFFFFF" font-family="Inter, sans-serif">accounts_by_customer</text>
-            <text x="170" y="347" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.6)" font-family="Inter, sans-serif">count · balance · account array</text>
-          </g>
-          <g color="rgba(255,255,255,0.35)">
-            <rect x="360" y="300" width="280" height="60" rx="8" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4" />
-            <text x="500" y="331" text-anchor="middle" font-size="12.5" fill="#FFFFFF" font-family="Inter, sans-serif">txn_activity_by_customer</text>
-            <text x="500" y="347" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.6)" font-family="Inter, sans-serif">30-day count · net amount</text>
-          </g>
-          <g color="#01CEDB">
-            <rect x="700" y="300" width="260" height="60" rx="8" fill="rgba(1,206,219,0.12)" stroke="currentColor" stroke-width="1.4" />
-            <text x="830" y="331" text-anchor="middle" font-size="12.5" fill="#FFFFFF" font-family="Inter, sans-serif">recent_digital_interactions</text>
-            <text x="830" y="347" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.6)" font-family="Inter, sans-serif">last 3, deterministic order</text>
-          </g>
+            <g color="#01CEDB">
+              <rect x="1080" y="125" width="480" height="220" rx="10" fill="rgba(1,206,219,0.1)" stroke="currentColor" stroke-width="1.6" />
+              <text x="1320" y="156" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">recent_digital_interactions</text>
+              <text x="1320" y="174" text-anchor="middle" font-size="10.5" fill="#01CEDB">ROW_NUMBER() top-3, pivoted</text>
+              <line x1="1100" y1="184" x2="1540" y2="184" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+              <text x="1100" y="207" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">customer_id            STRING (PK)</text>
+              <text x="1100" y="226" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">interaction_{1-3}_type    STRING</text>
+              <text x="1100" y="245" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">interaction_{1-3}_channel STRING</text>
+              <text x="1100" y="264" font-size="11" fill="rgba(255,255,255,0.85)" font-family="'SF Mono', Menlo, monospace">interaction_{1-3}_ts      TIMESTAMP(3)</text>
+              <text x="1100" y="283" font-size="10" fill="rgba(255,255,255,0.55)">→ 9 columns, deterministic order</text>
+            </g>
 
-          <line x1="170" y1="360" x2="480" y2="448" stroke="rgba(255,255,255,0.55)" stroke-width="1.3" marker-end="url(#arrow)" />
-          <line x1="500" y1="360" x2="500" y2="448" stroke="rgba(255,255,255,0.55)" stroke-width="1.3" marker-end="url(#arrow)" />
-          <line x1="830" y1="360" x2="520" y2="448" stroke="rgba(255,255,255,0.55)" stroke-width="1.3" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="600" y="410" text-anchor="middle">LEFT JOIN customer_id ×3</text>
+            <line x1="280" y1="345" x2="500" y2="378" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <line x1="800" y1="345" x2="800" y2="378" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <line x1="1320" y1="345" x2="1100" y2="378" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="800" y="367" text-anchor="middle">LEFT JOIN customer_id ×3</text>
 
-          <path d="M20,180 L8,180 L8,486 L348,486" fill="none" stroke="#FFFFFF" stroke-width="1.5" marker-end="url(#arrow)" />
-          <text class="arrow-label" x="14" y="466" fill="#FFFFFF">FROM — every</text>
-          <text class="arrow-label" x="14" y="482" fill="#FFFFFF">customer, always</text>
+            <path d="M100,50 L15,50 L15,530 L200,530" fill="none" stroke="#FFFFFF" stroke-width="1.5" marker-end="url(#arrowBuild)" />
+            <text class="arrow-label" x="18" y="500" fill="#FFFFFF" font-size="10.5">FROM — every</text>
+            <text class="arrow-label" x="18" y="515" fill="#FFFFFF" font-size="10.5">customer, always</text>
 
-          <g>
-            <rect x="350" y="450" width="300" height="72" rx="9" fill="#0099FF" stroke="#01CEDB" stroke-width="1.6" />
-            <text x="500" y="481" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF" font-family="Inter, sans-serif">c360_snapshot</text>
-            <text x="500" y="500" text-anchor="middle" font-size="11" fill="#FFFFFF" font-family="Inter, sans-serif">compacted · Avro · always current</text>
+            <rect x="200" y="380" width="1200" height="300" rx="12" fill="rgba(0,153,255,0.12)" stroke="#01CEDB" stroke-width="2.2" />
+            <text x="800" y="418" text-anchor="middle" font-size="20" font-weight="700" fill="#FFFFFF">c360_snapshot</text>
+            <text x="800" y="440" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.85)">23 columns · compacted · Avro · always current</text>
+            <line x1="220" y1="452" x2="1380" y2="452" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+
+            <text x="220" y="474" font-size="11" font-weight="700" fill="#FFFFFF">Customer</text>
+            <g font-size="9.5" fill="rgba(255,255,255,0.8)" font-family="'SF Mono', Menlo, monospace">
+              <text x="220" y="492">customer_id</text>
+              <text x="220" y="506">full_name</text>
+              <text x="220" y="520">segment</text>
+              <text x="220" y="534">risk_band</text>
+              <text x="220" y="548">relationship_manager</text>
+              <text x="220" y="562">email</text>
+              <text x="220" y="576">phone</text>
+            </g>
+
+            <text x="448" y="474" font-size="11" font-weight="700" fill="#7EC8FF">Accounts</text>
+            <g font-size="9.5" fill="rgba(255,255,255,0.8)" font-family="'SF Mono', Menlo, monospace">
+              <text x="448" y="492">account_count</text>
+              <text x="448" y="506">total_balance</text>
+              <text x="448" y="520">accounts ARRAY&lt;…&gt;</text>
+              <text x="466" y="520" fill="transparent">.</text>
+              <text x="448" y="536" font-size="9" fill="rgba(255,255,255,0.5)">↳ id·type·status·</text>
+              <text x="448" y="549" font-size="9" fill="rgba(255,255,255,0.5)">↳ balance·currency</text>
+            </g>
+
+            <text x="676" y="474" font-size="11" font-weight="700" fill="#7EC8FF">Transactions</text>
+            <g font-size="9.5" fill="rgba(255,255,255,0.8)" font-family="'SF Mono', Menlo, monospace">
+              <text x="676" y="492">txn_count_30d</text>
+              <text x="676" y="506">net_amount_30d</text>
+              <text x="676" y="520">last_txn_ts</text>
+            </g>
+
+            <text x="904" y="474" font-size="11" font-weight="700" fill="#01CEDB">Digital (top-3)</text>
+            <g font-size="9.5" fill="rgba(255,255,255,0.8)" font-family="'SF Mono', Menlo, monospace">
+              <text x="904" y="492">interaction_{1-3}_type</text>
+              <text x="904" y="506">interaction_{1-3}_channel</text>
+              <text x="904" y="520">interaction_{1-3}_ts</text>
+              <text x="904" y="536" font-size="9" fill="rgba(255,255,255,0.5)">(9 columns total)</text>
+            </g>
+
+            <text x="1132" y="474" font-size="11" font-weight="700" fill="rgba(255,255,255,0.6)">Meta</text>
+            <g font-size="9.5" fill="rgba(255,255,255,0.8)" font-family="'SF Mono', Menlo, monospace">
+              <text x="1132" y="492">snapshot_updated_at</text>
+            </g>
           </g>
         </svg>
       </div>
       <div class="slide-kicker">Every transformation above is live in Confluent Cloud right now — not a plan.</div>
-      <div class="slide-num">9 / 13</div>
+      <div class="slide-num">7 / 10</div>
     </section>
 
-    <!-- 10 · TWO-COLUMN: proof record -->
+    <!-- 8 · TWO-COLUMN: proof record -->
     <section class="slide two-column">
       <div class="slide-logo-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
@@ -538,45 +841,46 @@ html, body {
           <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
         </svg>
       </div>
-      <h2 class="slide-title">One customer, everything in one place</h2>
+      <h2 class="slide-title">One real event, straight off c360_snapshot</h2>
       <div class="slide-divider"></div>
       <div class="col-left">
-        <p class="col-label">Odalis Pujol Castell — a real c360_snapshot record</p>
-        <ul>
-          <li>Retail segment · Medium risk · no relationship manager assigned</li>
-          <li>1 account — Checking, active, <strong>€5,827.29</strong></li>
-          <li>3 transactions in the last 30 days · net <strong>−€236.71</strong></li>
-        </ul>
+        <p class="col-label">Odalis Pujol Castell — decoded from the running topic</p>
+        <pre>{
+  "customer_id": "…",
+  "full_name": "Odalis Pujol Castell",
+  "segment": "RETAIL",
+  "risk_band": "MEDIUM",
+  "relationship_manager": null,
+  "email": "…", "phone": "…",
+  "account_count": 1,
+  "total_balance": 5827.29,
+  "accounts": [
+    { "account_id": "…", "product_type": "CHECKING",
+      "status": "ACTIVE", "balance": 5827.29, "currency": "EUR" }
+  ],
+  "txn_count_30d": 3,
+  "net_amount_30d": -236.71,
+  "last_txn_ts": "…",
+  "interaction_1_type": "LOGOUT",  "interaction_1_channel": "MOBILE",
+  "interaction_2_type": "LOGIN",   "interaction_2_channel": "MOBILE",
+  "interaction_3_type": null,      "interaction_3_channel": null,
+  "snapshot_updated_at": "…"
+}</pre>
       </div>
       <div class="col-right">
-        <p class="col-label">Last 3 digital interactions</p>
+        <p class="col-label">What this real event proves</p>
         <ul>
-          <li>Logout — mobile <em>(most recent)</em></li>
-          <li>Login — mobile <em>(a moment earlier)</em></li>
-          <li>No third event yet — this customer has only 2 in the dataset</li>
+          <li><strong>relationship_manager</strong> is a genuine <em>null</em> — Retail-segment customers don't get one assigned.</li>
+          <li><strong>interaction_3_*</strong> is also null — this customer only has 2 digital events in the dataset, not 3.</li>
+          <li><strong>net_amount_30d</strong> is negative — all 3 sampled transactions were debits, so it's spend-only for now.</li>
+          <li>IDs, contact fields, and exact timestamps are elided here for the slide — the live record carries all 23 columns.</li>
         </ul>
       </div>
-      <div class="slide-kicker">Read straight off the running topic — not mocked up for this deck.</div>
-      <div class="slide-num">10 / 13</div>
+      <div class="slide-kicker">Consumed straight off the running c360_snapshot topic — not mocked up for this deck.</div>
+      <div class="slide-num">8 / 10</div>
     </section>
 
-    <!-- 11 · CALLOUT -->
-    <section class="slide callout">
-      <p class="slide-quote">This row corrected itself in seconds — no batch job, no manual re-run.</p>
-      <p class="slide-attribution">Observed live during the build · 2026-08-11</p>
-      <div class="slide-logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
-          <circle cx="14" cy="18" r="12" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
-          <line x1="14" y1="7" x2="14" y2="29" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="3" y1="18" x2="25" y2="18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="6" y1="10" x2="22" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="22" y1="10" x2="6" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" letter-spacing="2">CONFLUENT</text>
-        </svg>
-      </div>
-    </section>
-
-    <!-- 12 · CONTENT: next steps -->
+    <!-- 9 · CONTENT: next steps -->
     <section class="slide content-slide">
       <div class="slide-logo-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
@@ -592,16 +896,19 @@ html, body {
       <div class="slide-divider"></div>
       <div class="slide-body">
         <ul>
-          <li>Set a state TTL on the rollup stages before scaling past demo volume — Flink flagged this itself.</li>
-          <li>Bring in credit-side transactions so net amounts reflect true cash flow, not just spend.</li>
-          <li>Reconcile the digital vs. transaction channel vocabularies for a real omnichannel view.</li>
-          <li>Pair with a durable sink — e.g. Tableflow into Iceberg — for lookback beyond the 30-day event window.</li>
+          <li>Sink <strong>c360_snapshot</strong> to Iceberg via Tableflow — the AWS-side plumbing (S3 bucket, IAM role, provider integration) is already provisioned in Terraform; the next prompt is <em>create-tableflow-catalog-integration</em> + <em>create-tableflow-topic</em>.</li>
+          <li>Automate the entire environment — topics, schemas, tags, Flink jobs, Tableflow — as Terraform generated the same way: by prompting the assistant, without hand-writing a line of HCL.</li>
+          <li>Extend the same prompt-driven build to <strong>IBM Bob</strong> — Confluent's MCP server already documents a Bob config path (<em>~/.bob/settings/mcp_settings.json</em>); wire it up here so the build isn't tied to one assistant.</li>
+          <li>Wire up <strong>GitHub Copilot</strong> too — Confluent already runs an approved Copilot MCP endpoint org-wide; add the project-level config so the same prompts drive the build from VS Code.</li>
+          <li>Set a state TTL on the Flink rollup stages before scaling past demo volume — Flink flagged this itself at ~54 customers.</li>
+          <li>Ingest credit-side transactions (salary, deposits, incoming transfers) so <strong>net_amount_30d</strong> reflects true cash flow, not just spend.</li>
         </ul>
       </div>
-      <div class="slide-num">12 / 13</div>
+      <div class="slide-kicker">None of this is hypothetical — the Tableflow plumbing is already provisioned, and Bob + Copilot MCP paths are already documented.</div>
+      <div class="slide-num">9 / 10</div>
     </section>
 
-    <!-- 13 · CLOSING -->
+    <!-- 10 · CLOSING -->
     <section class="slide closing">
       <div class="slide-logo">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="180" height="32">
