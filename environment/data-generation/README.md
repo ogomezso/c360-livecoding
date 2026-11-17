@@ -18,16 +18,16 @@ This directory contains Python producers that generate realistic synthetic banki
 ### Option 1: Run during bootstrap (recommended)
 
 ```bash
-cd ..
-./bootstrap.sh
+cd ../..
+make up        # or: scripts/bootstrap.sh
 # Select 'Y' when prompted to generate demo data
 ```
 
 ### Option 2: Run standalone
 
 ```bash
-cd ..
-./generate-data.sh
+cd ../..
+make data      # or: scripts/generate-data.sh
 ```
 
 ### Option 3: Run Python directly
@@ -115,11 +115,8 @@ Example:
 ### Adjust Data Volume
 
 ```bash
-./generate-data.sh 500 2000 1500
-#                  ^^^  ^^^^  ^^^^
-#                  |    |     └─ Interactions
-#                  |    └─ Transactions
-#                  └─ Customers
+make data CUSTOMERS=500 TRANSACTIONS=2000 INTERACTIONS=1500
+# or: scripts/generate-data.sh 500 2000 1500   (customers, transactions, interactions)
 ```
 
 Or with Python:
@@ -241,7 +238,7 @@ To refresh data during demos:
 
 ```bash
 # Option 1: Quick refresh (delete and regenerate)
-./generate-data.sh
+make data
 
 # Option 2: Just add more data (won't delete existing)
 cd producers

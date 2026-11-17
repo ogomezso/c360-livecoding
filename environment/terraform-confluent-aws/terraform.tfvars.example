@@ -20,7 +20,7 @@
 
 # Environment Configuration
 environment_name         = "customer-360-demo"
-environment_display_name = "customer-360-demo-environment"  # No spaces allowed!
+environment_display_name = "customer-360-demo-environment"  # No spaces allowed! A suffix is appended: <name>-<suffix>
 
 # Kafka Cluster Configuration (Standard cluster with public endpoints)
 cluster_display_name = "customer-360-cluster"
@@ -53,3 +53,7 @@ tags = {
 # eu-central-2   = Zurich
 # eu-north-1     = Stockholm
 # eu-south-1     = Milan
+
+# Suffix appended to the environment and service-account names so several demos can share one
+# organization. Leave it unset for a random 8-character hex (e.g. a1b2c3d4), stable until you destroy.
+# name_suffix = "ogomez"

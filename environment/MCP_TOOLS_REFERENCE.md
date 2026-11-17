@@ -228,8 +228,7 @@ After configuring, restart Claude Code and verify tool availability:
 
 2. **Reconfigure:**
    ```bash
-   cd environment
-   ./reconfigure-mcp.sh
+   make ai-claude        # from the repo root; or scripts/reconfigure-mcp.sh
    ```
 
 3. **Restart Claude Code** (required to reload tools)

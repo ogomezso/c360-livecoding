@@ -6,9 +6,11 @@ set -euo pipefail
 # to enable all available tools including tag management
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="$SCRIPT_DIR/terraform-confluent-aws"
-MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_DIR="$ROOT_DIR/environment"
+TERRAFORM_DIR="${ENV_DIR}/terraform-confluent-aws"
+MCP_HOME="${ENV_DIR}/mcp-confluent"
+PROJECT_ROOT="$ROOT_DIR"
 # @confluentinc/kafka-javascript (a native dependency of mcp-confluent) only
 # ships prebuilt binaries up to Node ABI 127 (Node 22.x). Whatever nvm/mise
 # resolves as "latest" drifts forward over time and will outrun that — a
@@ -84,44 +86,11 @@ echo -e "${GREEN}✓${NC} Node ${MCP_NODE_VERSION} ready"
 
 echo -e "${BLUE}[5/5]${NC} Regenerating project .mcp.json..."
 
-# Confluent's org-wide Claude Code policy only allows MCP servers whose
-# command+args match a reviewed allowlist exactly — for mcp-confluent that's
-# a bare "npx -y @confluentinc/mcp-confluent [--oauth|--config ...]", nothing
-# else. A "mise exec node@N -- npx ..." wrapper (or a pinned "@N" version
-# suffix) doesn't match, so Claude Code silently drops the server — no
-# error, no "pending approval", it just never appears. To keep the Node 22
-# pin (needed for mcp-confluent's native addon, see MCP_NODE_VERSION above)
-# without breaking that exact-command match, the pin moves into "env.PATH"
-# instead of the command itself.
-cat > "${PROJECT_ROOT}/.mcp.json" <<EOF
-{
-  "mcpServers": {
-    "confluent": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@confluentinc/mcp-confluent", "--oauth"],
-      "env": {
-        "PATH": "${MCP_NODE_BIN_DIR}:${PATH}"
-      }
-    }
-  }
-}
-EOF
-
-echo -e "${GREEN}✓${NC} .mcp.json regenerated (npx @confluentinc/mcp-confluent --oauth, pinned to Node ${MCP_NODE_VERSION} via PATH)"
+# The server definition lives in ai-mcp-config.sh (shared with `make ai-*`): bare npx
+# command for the org allowlist, Node pinned through env.PATH, stale approvals reset.
+PROJECT_ROOT="$PROJECT_ROOT" MCP_NODE_VERSION="$MCP_NODE_VERSION" "$SCRIPT_DIR/ai-mcp-config.sh" claude
 echo -e "${YELLOW}!${NC} Claude will prompt an interactive Confluent Cloud OAuth login on first tool use — the .env credentials above are for the demo scripts, not for Claude's MCP connection"
 echo ""
-
-# Claude Code remembers per-project approve/reject decisions for .mcp.json
-# servers in ~/.claude.json, keyed by server name — not by the args/env
-# inside it. A stale rejection from a previous cluster would silently
-# block this freshly-regenerated config forever, in both the CLI and the
-# VS Code extension. Clear it so the next session starts from a clean slate.
-if command -v claude >/dev/null 2>&1; then
-    (cd "$PROJECT_ROOT" && claude mcp reset-project-choices >/dev/null 2>&1) || true
-    echo -e "${GREEN}✓${NC} Reset Claude Code's project MCP approval state (avoids stale approve/reject from a prior run)"
-    echo ""
-fi
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}MCP Server Reconfigured Successfully!${NC}"

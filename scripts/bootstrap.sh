@@ -13,10 +13,12 @@ set -e
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
-TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/terraform-tableflow-aws"
-MCP_DIR="${SCRIPT_DIR}/mcp-confluent"
-MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_DIR="$ROOT_DIR/environment"
+TERRAFORM_DIR="${ENV_DIR}/terraform-confluent-aws"
+TABLEFLOW_TERRAFORM_DIR="${ENV_DIR}/terraform-tableflow-aws"
+MCP_DIR="${ENV_DIR}/mcp-confluent"
+MCP_HOME="${ENV_DIR}/mcp-confluent"
 # The package version is intentionally unpinned in .mcp.json — Confluent's
 # org-wide Claude Code MCP allowlist matches the bare "@confluentinc/mcp-confluent"
 # package name exactly; a pinned "@x.y.z" suffix wouldn't match and Claude Code
@@ -315,57 +317,10 @@ configure_mcp_credentials() {
 create_project_mcp_config() {
     log_section "Step 7: Generating Project MCP Configuration"
 
-    local project_root="$(cd "$SCRIPT_DIR/.." && pwd)"
-    local mcp_config="${project_root}/.mcp.json"
-
-    if ! command -v mise >/dev/null 2>&1; then
-        log_error "mise not found on PATH (install_mcp_node_runtime should have run first)"
-        return 1
-    fi
-
-    local mcp_node_bin_dir="$(mise where "node@${MCP_NODE_VERSION}")/bin"
-
-    log_info "Creating .mcp.json in project root..."
-    log_info "Package: @confluentinc/mcp-confluent (unpinned, per org allowlist), Node ${MCP_NODE_VERSION}"
-
-    # Confluent's org-wide Claude Code policy only allows MCP servers whose
-    # command+args match a reviewed allowlist exactly — for mcp-confluent
-    # that's a bare "npx -y @confluentinc/mcp-confluent [--oauth|--config ...]",
-    # nothing else. A "mise exec node@N -- npx ..." wrapper (or a pinned
-    # "@x.y.z" version suffix) doesn't match, so Claude Code silently drops
-    # the server — no error, no "pending approval", it just never appears.
-    # To keep the Node ${MCP_NODE_VERSION} pin (needed for mcp-confluent's
-    # native addon) without breaking that exact-command match, the pin moves
-    # into "env.PATH" instead of the command itself.
-    cat > "$mcp_config" <<EOF
-{
-  "mcpServers": {
-    "confluent": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@confluentinc/mcp-confluent", "--oauth"],
-      "env": {
-        "PATH": "${mcp_node_bin_dir}:${PATH}"
-      }
-    }
-  }
-}
-EOF
-
-    log_success "Project MCP configuration created: .mcp.json"
-    log_info "This file enables Confluent MCP in Claude Code (VS Code extension & CLI)"
+    # The server definition (bare npx command for the org allowlist, Node pinned via env.PATH)
+    # lives in ai-mcp-config.sh so Claude, Copilot and Bob all share it.
+    PROJECT_ROOT="$ROOT_DIR" "$SCRIPT_DIR/ai-mcp-config.sh" claude
     log_info "Claude will prompt an interactive Confluent Cloud OAuth login on first tool use — the .env credentials from Step 5 are for the demo scripts, not for Claude's MCP connection"
-
-    # Claude Code remembers per-project approve/reject decisions for
-    # .mcp.json servers in ~/.claude.json, keyed by server name — not by
-    # the args/env inside it. A stale rejection from a previous cluster
-    # would silently block this freshly-regenerated config forever, in
-    # both the CLI and the VS Code extension. Clear it so the next
-    # session starts from a clean slate.
-    if command -v claude >/dev/null 2>&1; then
-        (cd "$project_root" && claude mcp reset-project-choices >/dev/null 2>&1) || true
-        log_info "Reset Claude Code's project MCP approval state (avoids stale approve/reject from a prior run)"
-    fi
 }
 
 # ============================================================================
@@ -391,8 +346,7 @@ generate_demo_data() {
         log_info "Skipping data generation"
         echo ""
         log_info "You can generate data later by running:"
-        echo "  cd $SCRIPT_DIR"
-        echo "  ./generate-data.sh"
+        echo "  make data"
         echo ""
     fi
 }
@@ -470,13 +424,13 @@ display_next_steps() {
     echo '     - Then ask: "List my Kafka topics"'
     echo ""
     echo "  2. Generate demo data (if not done already):"
-    echo "     ./generate-data.sh"
+    echo "     make data"
     echo "     - Creates 200 customers, 400+ accounts, 1000+ transactions"
     echo "     - Realistic Spanish names, EUR currency, MCC codes"
     echo ""
     echo "  3. (Optional) Configure other Claude Code environments:"
-    echo "     ./configure-claude-mcp.sh --vscode    # VS Code global settings"
-    echo "     ./configure-claude-mcp.sh --desktop   # Claude Desktop app"
+    echo "     scripts/configure-claude-mcp.sh --vscode    # VS Code global settings"
+    echo "     scripts/configure-claude-mcp.sh --desktop   # Claude Desktop app"
     echo ""
     echo "  4. Start building your Customer 360 demo!"
     echo "     - Explore topics and schemas with Claude MCP"
@@ -492,7 +446,7 @@ display_next_steps() {
         if [ -n "$bucket_name" ]; then
             echo ""
             echo "  5. (Optional) Enable Tableflow on topics:"
-            echo '     - Ask Claude: "Enable Tableflow on c360.snapshot with Iceberg format"'
+            echo '     - Ask Claude: "Enable Tableflow on c360_snapshot with Iceberg format"'
             echo '     - Ask Claude: "Create AWS Glue catalog integration for tableflow"'
             echo "     - S3 Bucket: $bucket_name"
         fi

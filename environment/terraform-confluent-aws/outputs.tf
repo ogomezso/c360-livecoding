@@ -287,10 +287,15 @@ output "next_steps" {
     3. Open Flink console: https://confluent.cloud/environments/${confluent_environment.customer_360.id}/flink
     4. Configure MCP Server:
        terraform output -raw mcp_server_env_config > ~/.confluent-mcp/.env
-       (or run: cd ../.. && ./environment/reconfigure-mcp.sh)
+       (or run: cd ../.. && make ai-claude)
     5. Restart Claude Code to load ALL MCP tools
     6. Check tool status: terraform output mcp_tools_status
 
     💡 Tip: Use 'terraform output -json' to get all outputs in JSON format
   EOT
+}
+
+output "name_suffix" {
+  description = "Suffix appended to this deployment's environment and service account names"
+  value       = local.name_suffix
 }

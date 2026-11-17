@@ -73,7 +73,7 @@ data "aws_iam_policy_document" "tableflow_assume_role" {
 
 # IAM Role for Tableflow
 resource "aws_iam_role" "tableflow_role" {
-  name        = var.iam_role_name
+  name        = local.role_name
   description = "IAM role for Confluent Cloud Tableflow to access S3 bucket"
 
   # Use the appropriate trust policy based on whether provider integration is created
@@ -82,7 +82,7 @@ resource "aws_iam_role" "tableflow_role" {
   tags = merge(
     var.tags,
     {
-      Name = var.iam_role_name
+      Name = local.role_name
     }
   )
 
@@ -96,4 +96,9 @@ resource "aws_iam_role_policy" "tableflow_s3_policy" {
   name   = "tableflow-s3-access"
   role   = aws_iam_role.tableflow_role.id
   policy = data.aws_iam_policy_document.tableflow_s3_access.json
+}
+
+# IAM role names are unique per AWS account: suffix them so two demos can share an account.
+locals {
+  role_name = "${var.iam_role_name}-${var.name_suffix != "" ? var.name_suffix : random_id.suffix.hex}"
 }

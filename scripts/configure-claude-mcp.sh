@@ -9,7 +9,9 @@ set -e
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_DIR="$ROOT_DIR/environment"
+MCP_HOME="${ENV_DIR}/mcp-confluent"
 ENV_FILE="${MCP_HOME}/.env"
 # @confluentinc/kafka-javascript (a native dependency of mcp-confluent) only ships
 # prebuilt binaries up to Node ABI 127 (Node 22.x) — see reconfigure-mcp.sh — so the
@@ -72,7 +74,7 @@ get_mcp_node_bin_dir() {
 check_mcp_configured() {
     if [ ! -f "$ENV_FILE" ]; then
         log_error "MCP environment file not found: $ENV_FILE"
-        log_info "Run the bootstrap script first: ./environment/bootstrap.sh"
+        log_info "Run the bootstrap first: make up (or scripts/bootstrap.sh)"
         exit 1
     fi
 

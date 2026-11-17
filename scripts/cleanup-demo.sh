@@ -24,9 +24,10 @@ ROBOT="🤖"
 
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-confluent-aws"
-TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-tableflow-aws"
-MCP_ENV_FILE="${SCRIPT_DIR}/environment/mcp-confluent/.env"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TERRAFORM_DIR="${ROOT_DIR}/environment/terraform-confluent-aws"
+TABLEFLOW_TERRAFORM_DIR="${ROOT_DIR}/environment/terraform-tableflow-aws"
+MCP_ENV_FILE="${ROOT_DIR}/environment/mcp-confluent/.env"
 
 echo -e "${RED}${BOLD}"
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -108,8 +109,8 @@ echo ""
 echo -e "${YELLOW}${BOLD}Cleanup Options:${NC}"
 echo ""
 echo -e "${BOLD}1. Clean Demo Resources Only${NC} (recommended)"
-echo "   • Deletes: Flink jobs, tags, c360.snapshot topic, Tableflow topics"
-echo "   • Preserves: Infrastructure (Kafka, Flink pool, source topics, AWS resources)"
+echo "   • Deletes: all Flink statements, every topic Terraform does not manage (and their schemas), Tableflow on those topics"
+echo "   • Preserves: Infrastructure (Kafka, Flink pool, Terraform-managed source topics, AWS resources)"
 echo "   • Use this to reset the demo and start fresh"
 echo ""
 echo -e "${BOLD}2. Destroy Everything${NC}"
@@ -117,7 +118,14 @@ echo "   • Deletes: All demo resources + complete infrastructure"
 echo "   • Runs: terraform destroy (Confluent + AWS Tableflow)"
 echo "   • Use this to completely remove the demo"
 echo ""
-read -p "Choose option (1 or 2): " -r
+# CLEANUP_OPTION=1|2 (set by `make reset` / `make down`) skips the menu prompt.
+# Option 2 still asks you to type 'destroy' — that confirmation is deliberate.
+if [ -n "${CLEANUP_OPTION:-}" ]; then
+    REPLY="$CLEANUP_OPTION"
+    echo "Using CLEANUP_OPTION=$REPLY"
+else
+    read -p "Choose option (1 or 2): " -r
+fi
 echo ""
 
 CLEANUP_OPTION=$REPLY
@@ -128,124 +136,10 @@ if [[ ! "$CLEANUP_OPTION" =~ ^[12]$ ]]; then
 fi
 
 if [ "$CLEANUP_OPTION" = "1" ]; then
-    # Option 1: Clean only demo resources
+    # Option 1: clean only demo resources. Shared with `make reset`; the plan is derived
+    # from the live environment (see reset-demo.sh), not from hardcoded names.
     print_header "Clean Demo Resources"
-
-    # Check if MCP credentials exist
-    if [ -f "$MCP_ENV_FILE" ]; then
-        print_success "Found MCP credentials at: $MCP_ENV_FILE"
-        print_info "Loading credentials for automated cleanup..."
-        echo ""
-
-        # Source the .env file
-        set -a
-        source "$MCP_ENV_FILE"
-        set +a
-
-        # Extract Terraform outputs for additional info
-        cd "$TERRAFORM_DIR"
-        ENV_ID=$(terraform output -raw environment_id 2>/dev/null)
-        KAFKA_CLUSTER_ID=$(terraform output -raw kafka_cluster_id 2>/dev/null)
-        ORG_ID=$(terraform output -raw mcp_server_env_config 2>/dev/null | grep "FLINK_ORG_ID=" | cut -d'=' -f2)
-        cd - > /dev/null
-
-        # Delete Flink statements
-        print_header "Deleting Flink Statements"
-
-        for statement in "c360-agg-v3" "digital_interactions_parsed"; do
-            print_info "Deleting Flink statement: $statement..."
-
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-                -u "${FLINK_API_KEY}:${FLINK_API_SECRET}" \
-                "${FLINK_REST_ENDPOINT}/sql/v1/organizations/${ORG_ID}/environments/${ENV_ID}/statements/${statement}" 2>/dev/null)
-
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-            if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "404" ]; then
-                print_success "Deleted: $statement"
-            else
-                print_warning "Could not delete $statement (may not exist)"
-            fi
-        done
-
-        # Delete topic c360.snapshot
-        print_header "Deleting Topics"
-
-        print_info "Deleting topic: c360.snapshot..."
-        RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-            -u "${KAFKA_API_KEY}:${KAFKA_API_SECRET}" \
-            "${KAFKA_REST_ENDPOINT}/kafka/v3/clusters/${KAFKA_CLUSTER_ID}/topics/c360.snapshot" 2>/dev/null)
-
-        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-        if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "404" ]; then
-            print_success "Deleted topic: c360.snapshot"
-        else
-            print_warning "Could not delete c360.snapshot (may not exist)"
-        fi
-
-        # Delete schema
-        print_header "Deleting Schemas"
-
-        print_info "Deleting schema: c360.snapshot-value..."
-        # Soft delete
-        curl -s -X DELETE \
-            -u "${SCHEMA_REGISTRY_API_KEY}:${SCHEMA_REGISTRY_API_SECRET}" \
-            "${SCHEMA_REGISTRY_ENDPOINT}/subjects/c360.snapshot-value" > /dev/null 2>&1
-
-        # Hard delete
-        RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-            -u "${SCHEMA_REGISTRY_API_KEY}:${SCHEMA_REGISTRY_API_SECRET}" \
-            "${SCHEMA_REGISTRY_ENDPOINT}/subjects/c360.snapshot-value?permanent=true" 2>/dev/null)
-
-        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-        if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "404" ]; then
-            print_success "Deleted schema: c360.snapshot-value"
-        else
-            print_warning "Could not delete schema (may not exist)"
-        fi
-
-        # Delete Tableflow resources
-        print_header "Deleting Tableflow Resources"
-
-        print_info "Checking for Tableflow topics and catalog integrations..."
-        print_info "Use Claude + MCP to delete Tableflow resources:"
-        echo ""
-        echo -e '  '"${YELLOW}\"List all tableflow topics\"${NC}"
-        echo -e '  '"${YELLOW}\"Delete tableflow topic for c360.snapshot\"${NC}"
-        echo -e '  '"${YELLOW}\"List tableflow catalog integrations\"${NC}"
-        echo -e '  '"${YELLOW}\"Delete any catalog integrations\"${NC}"
-        echo ""
-
-        # Delete tags (requires qualified names, which we'd need to fetch)
-        print_header "Removing Tags"
-
-        print_info "Tag deletion requires qualified names from Confluent API"
-        print_info "To remove tags, use Claude + MCP:"
-        echo ""
-        echo -e '  '"${YELLOW}\"Remove all tags from topics with c360 tag\"${NC}"
-        echo -e '  '"${YELLOW}\"Delete the tags: c360, source, data_product\"${NC}"
-        echo ""
-
-    else
-        # No MCP credentials - guide user to Claude
-        print_warning "MCP credentials not found at: $MCP_ENV_FILE"
-        print_info "Use Claude + MCP for manual cleanup"
-        echo ""
-        echo -e "${CYAN}Resources to delete:${NC}"
-        echo -e "  ${TRASH} Flink statements: c360-agg-v3, digital_interactions_parsed"
-        echo -e "  ${TRASH} Tableflow topics and catalog integrations"
-        echo -e "  ${TRASH} Tags: c360, source, data_product"
-        echo -e "  ${TRASH} Topic: c360.snapshot"
-        echo -e "  ${TRASH} Schema: c360.snapshot-value"
-        echo ""
-        echo -e "${CYAN}Ask Claude:${NC}"
-        echo -e '  '"${YELLOW}\"Delete Flink statements, tableflow topics, tags, and c360.snapshot topic\"${NC}"
-        echo ""
-    fi
-
-    print_success "Demo resources cleaned"
-    echo ""
-    print_info "Infrastructure preserved. Run ${YELLOW}./startup-demo.sh${NC} to rebuild the demo."
-
+    "${SCRIPT_DIR}/reset-demo.sh"
 elif [ "$CLEANUP_OPTION" = "2" ]; then
     # Option 2: Destroy everything with Terraform
     print_header "Destroy Complete Infrastructure"
@@ -256,7 +150,7 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
     echo -e "  ${TRASH} Flink compute pool and all jobs"
     echo -e "  ${TRASH} Schema Registry and all schemas"
     echo -e "  ${TRASH} All tags and metadata"
-    echo -e "  ${WARNING} Project .mcp.json / environment/mcp-confluent/.env will go stale (auto-regenerated by the next ./startup-demo.sh run)"
+    echo -e "  ${WARNING} Project .mcp.json / environment/mcp-confluent/.env will go stale (auto-regenerated by the next make up)"
     echo ""
     read -p "Type 'destroy' to confirm: " -r
     echo ""
@@ -265,6 +159,11 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
         echo -e "${GREEN}Cleanup cancelled. No resources were deleted.${NC}"
         exit 0
     fi
+
+    # Remove writers first: stop Flink statements and drop Tableflow/topics the session built,
+    # so terraform destroy does not trip over resources it does not manage. Non-fatal.
+    print_header "Removing Session-Built Resources"
+    YES=1 "${SCRIPT_DIR}/reset-demo.sh" || print_warning "Pre-destroy reset reported issues; continuing with terraform destroy"
 
     print_info "Running terraform destroy on Confluent infrastructure..."
     echo ""
@@ -364,7 +263,7 @@ echo -e "${NC}"
 
 if [ "$CLEANUP_OPTION" = "1" ]; then
     echo -e "${CYAN}${BOLD}What Was Cleaned:${NC}"
-    echo -e "  ${GREEN}${CHECK}${NC} Demo resources removed (Flink jobs, tags, c360.snapshot, Tableflow topics)"
+    echo -e "  ${GREEN}${CHECK}${NC} Demo resources removed (Flink statements, session-built topics and schemas, Tableflow topics)"
     echo -e "  ${GREEN}${CHECK}${NC} Infrastructure preserved (Kafka, Flink, source topics, AWS resources)"
     echo ""
     echo -e "${CYAN}${BOLD}Next Steps:${NC}"
@@ -378,7 +277,7 @@ elif [ "$CLEANUP_OPTION" = "2" ]; then
     echo -e "  ${GREEN}${CHECK}${NC} Tableflow AWS resources destroyed (S3, IAM, provider integration)"
     echo ""
     echo -e "${CYAN}${BOLD}Next Steps:${NC}"
-    echo -e "  ${ARROW} Redeploy from scratch: ${YELLOW}./startup-demo.sh${NC}"
+    echo -e "  ${ARROW} Redeploy from scratch: ${YELLOW}make up${NC}"
     echo -e "  ${ARROW} That will re-run bootstrap.sh, which regenerates .mcp.json and environment/mcp-confluent/.env from the new cluster's credentials"
 fi
 

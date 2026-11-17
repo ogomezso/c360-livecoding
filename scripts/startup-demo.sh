@@ -24,8 +24,9 @@ ROBOT="🤖"
 
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-confluent-aws"
-TABLEFLOW_TERRAFORM_DIR="${SCRIPT_DIR}/environment/terraform-tableflow-aws"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+TERRAFORM_DIR="${ROOT_DIR}/environment/terraform-confluent-aws"
+TABLEFLOW_TERRAFORM_DIR="${ROOT_DIR}/environment/terraform-tableflow-aws"
 
 echo -e "${CYAN}${BOLD}"
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -145,8 +146,8 @@ if [ "$NEEDS_BOOTSTRAP" = true ]; then
     print_info "Running complete bootstrap (Terraform + MCP + Data)..."
     echo ""
 
-    if [ -f "${SCRIPT_DIR}/environment/bootstrap.sh" ]; then
-        "${SCRIPT_DIR}/environment/bootstrap.sh"
+    if [ -f "${SCRIPT_DIR}/bootstrap.sh" ]; then
+        "${SCRIPT_DIR}/bootstrap.sh"
 
         if [ $? -ne 0 ]; then
             print_error "Bootstrap failed. Please check errors above."
@@ -156,7 +157,7 @@ if [ "$NEEDS_BOOTSTRAP" = true ]; then
         print_success "Bootstrap completed! Infrastructure is ready."
         exit 0
     else
-        print_error "Bootstrap script not found at: ${SCRIPT_DIR}/environment/bootstrap.sh"
+        print_error "Bootstrap script not found at: ${SCRIPT_DIR}/bootstrap.sh"
         exit 1
     fi
 fi
@@ -339,215 +340,11 @@ else
         echo ""
         read -p "Deploy Tableflow AWS infrastructure? (y/n): " -r
         if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-            print_info "Deploying Tableflow AWS infrastructure..."
-            echo ""
-
-            cd "$TABLEFLOW_TERRAFORM_DIR"
-
-            # Always regenerate terraform.tfvars to ensure fresh values
-            if [ -f "terraform.tfvars" ]; then
-                print_warning "Found existing terraform.tfvars - will regenerate with current values"
-                rm -f terraform.tfvars
-            fi
-
-            print_info "Creating terraform.tfvars from AWS CLI and terraform outputs..."
-            echo ""
-
-                # Try to authenticate with AWS CLI
-                AWS_AUTH_SUCCESS=false
-
-                # First, try without profile (uses default or environment variables)
-                if aws sts get-caller-identity > /dev/null 2>&1; then
-                    AWS_AUTH_SUCCESS=true
-                    print_success "AWS authentication successful"
-                else
-                    # If no default auth, check if AWS_PROFILE is set
-                    if [ -n "$AWS_PROFILE" ]; then
-                        if aws sts get-caller-identity --profile "$AWS_PROFILE" > /dev/null 2>&1; then
-                            AWS_AUTH_SUCCESS=true
-                            print_success "AWS authentication successful (profile: $AWS_PROFILE)"
-                        fi
-                    else
-                        # Try to find a profile in ~/.aws/credentials
-                        if [ -f "$HOME/.aws/credentials" ]; then
-                            FIRST_PROFILE=$(grep '^\[' "$HOME/.aws/credentials" | head -1 | tr -d '[]')
-                            if [ -n "$FIRST_PROFILE" ]; then
-                                print_info "No AWS_PROFILE set, trying profile: $FIRST_PROFILE"
-                                if aws sts get-caller-identity --profile "$FIRST_PROFILE" > /dev/null 2>&1; then
-                                    export AWS_PROFILE="$FIRST_PROFILE"
-                                    AWS_AUTH_SUCCESS=true
-                                    print_success "AWS authentication successful (using profile: $FIRST_PROFILE)"
-                                fi
-                            fi
-                        fi
-                    fi
-                fi
-
-                if [ "$AWS_AUTH_SUCCESS" = true ]; then
-                    # Get caller identity for logging
-                    if [ -n "$AWS_PROFILE" ]; then
-                        CALLER_IDENTITY=$(aws sts get-caller-identity --profile "$AWS_PROFILE" --output text 2>/dev/null | awk '{print $2}')
-                    else
-                        CALLER_IDENTITY=$(aws sts get-caller-identity --output text 2>/dev/null | awk '{print $2}')
-                    fi
-                    print_info "AWS identity: $CALLER_IDENTITY"
-
-                    # Get Confluent Cloud cluster region from terraform (S3 bucket should be in same region)
-                    cd "$TERRAFORM_DIR"
-                    KAFKA_CLUSTER_REGION=$(terraform output -raw kafka_cluster_region 2>/dev/null)
-                    cd "$TABLEFLOW_TERRAFORM_DIR"
-
-                    # Extract AWS region from cluster region (format: AWS/eu-west-1)
-                    if [[ "$KAFKA_CLUSTER_REGION" == AWS/* ]]; then
-                        AWS_REGION_VAL="${KAFKA_CLUSTER_REGION#AWS/}"
-                        print_success "Using Kafka cluster region: $AWS_REGION_VAL"
-                    else
-                        # Fallback to AWS CLI config or environment
-                        AWS_REGION_VAL="${AWS_REGION:-${AWS_DEFAULT_REGION}}"
-                        if [ -z "$AWS_REGION_VAL" ]; then
-                            if [ -n "$AWS_PROFILE" ]; then
-                                AWS_REGION_VAL=$(aws configure get region --profile "$AWS_PROFILE" 2>/dev/null || echo "us-east-1")
-                            else
-                                AWS_REGION_VAL=$(aws configure get region 2>/dev/null || echo "us-east-1")
-                            fi
-                        fi
-                        print_warning "Could not get cluster region, using: $AWS_REGION_VAL"
-                    fi
-
-                    # Get Confluent Cloud credentials and IDs from main terraform (ALWAYS fresh)
-                    cd "$TERRAFORM_DIR"
-
-                    # Refresh terraform state to ensure we have current values
-                    print_info "Refreshing Confluent terraform state to get current IDs..."
-                    terraform refresh -lock=false > /dev/null 2>&1 || true
-
-                    CONFLUENT_API_KEY=$(terraform output -raw mcp_server_env_config 2>/dev/null | grep "CONFLUENT_CLOUD_API_KEY=" | cut -d'=' -f2)
-                    CONFLUENT_API_SECRET=$(terraform output -raw mcp_server_env_config 2>/dev/null | grep "CONFLUENT_CLOUD_API_SECRET=" | cut -d'=' -f2)
-                    ENV_ID=$(terraform output -raw environment_id 2>/dev/null)
-                    CLUSTER_ID=$(terraform output -raw kafka_cluster_id 2>/dev/null)
-
-                    print_success "Retrieved current Confluent configuration"
-                    print_info "Environment: $ENV_ID"
-                    print_info "Cluster: $CLUSTER_ID"
-
-                    cd "$TABLEFLOW_TERRAFORM_DIR"
-
-                    if [ -z "$CONFLUENT_API_KEY" ] || [ -z "$ENV_ID" ] || [ -z "$CLUSTER_ID" ]; then
-                        print_error "Could not retrieve Confluent Cloud configuration from terraform"
-                        print_info "Run manually: cd $TABLEFLOW_TERRAFORM_DIR && make deploy"
-                        cd - > /dev/null
-                    else
-                        print_success "Retrieved Confluent Cloud configuration from terraform"
-
-                        # Create terraform.tfvars (without explicit AWS keys - use default provider)
-                        cat > terraform.tfvars <<EOF
-# AWS Configuration
-# Using AWS CLI default credential chain (profiles, SSO, environment variables, etc.)
-# No explicit keys needed - Terraform AWS provider will use the same credentials as AWS CLI
-# AWS Profile in use: ${AWS_PROFILE:-default}
-aws_region = "$AWS_REGION_VAL"
-
-# Confluent Cloud Configuration (from terraform outputs)
-confluent_cloud_api_key    = "$CONFLUENT_API_KEY"
-confluent_cloud_api_secret = "$CONFLUENT_API_SECRET"
-confluent_environment_id   = "$ENV_ID"
-confluent_cluster_id       = "$CLUSTER_ID"
-
-# Provider Integration
-create_provider_integration = true
-
-# Phase 2: Trust Policy Update (will be auto-populated after first apply)
-# confluent_provider_integration_role_arn = ""
-# confluent_external_id                   = ""
-EOF
-
-                        print_success "terraform.tfvars created with AWS CLI credentials"
-                    fi
-                else
-                    print_error "AWS authentication failed"
-                    echo ""
-                    print_info "Please authenticate with AWS first. Options:"
-                    print_info "  1. For Confluent employees: run your assume command"
-                    print_info "     Example: assume <role-name>"
-                    print_info "  2. For AWS SSO: aws sso login --profile <profile-name>"
-                    print_info "  3. For static credentials: aws configure"
-                    echo ""
-                    print_info "Then run this script again."
-                    cd - > /dev/null
-                fi
-
-            # Only proceed if terraform.tfvars exists now
-            if [ -f "terraform.tfvars" ]; then
-                # Run terraform init and apply
-                terraform init > /dev/null 2>&1
-                terraform apply -auto-approve
-
-                if [ $? -eq 0 ]; then
-                    print_success "Tableflow AWS infrastructure deployed (Phase 1)"
-                    TABLEFLOW_DEPLOYED=true
-
-                    # Check if provider integration was created and has valid outputs
-                    PROVIDER_INTEGRATION_ID=$(terraform output -raw provider_integration_id 2>/dev/null)
-
-                    if [ -n "$PROVIDER_INTEGRATION_ID" ] && [[ "$PROVIDER_INTEGRATION_ID" != "Not created" ]] && [[ "$PROVIDER_INTEGRATION_ID" != "Manual creation required" ]]; then
-                        print_success "Provider integration created: $PROVIDER_INTEGRATION_ID"
-
-                        # Get trust policy values from provider integration
-                        CONFLUENT_ROLE_ARN=$(terraform output -raw confluent_role_arn 2>/dev/null)
-                        EXTERNAL_ID=$(terraform output -raw confluent_external_id 2>/dev/null)
-                        TRUST_STATUS=$(terraform output -raw current_trust_policy_status 2>/dev/null)
-
-                        # Check if we got valid values (not error messages)
-                        if [ -n "$CONFLUENT_ROLE_ARN" ] && [[ "$CONFLUENT_ROLE_ARN" == arn:aws:iam::* ]] && [ -n "$EXTERNAL_ID" ]; then
-                            if [[ "$TRUST_STATUS" == *"deny-all"* ]] || [[ "$TRUST_STATUS" == *"not yet updated"* ]]; then
-                                print_warning "Trust policy needs to be updated (Phase 2)"
-                                echo ""
-                                print_info "Automatically updating trust policy with Confluent role..."
-                                print_info "Confluent role ARN: $CONFLUENT_ROLE_ARN"
-
-                                # Update terraform.tfvars with trust policy values
-                                if grep -q "^# confluent_provider_integration_role_arn" terraform.tfvars; then
-                                    sed -i.bak "s|^# confluent_provider_integration_role_arn = \".*\"|confluent_provider_integration_role_arn = \"$CONFLUENT_ROLE_ARN\"|" terraform.tfvars
-                                    sed -i.bak "s|^# confluent_external_id = \".*\"|confluent_external_id = \"$EXTERNAL_ID\"|" terraform.tfvars
-                                    rm -f terraform.tfvars.bak
-                                else
-                                    echo "" >> terraform.tfvars
-                                    echo "# Phase 2: Trust Policy Update (auto-populated)" >> terraform.tfvars
-                                    echo "confluent_provider_integration_role_arn = \"$CONFLUENT_ROLE_ARN\"" >> terraform.tfvars
-                                    echo "confluent_external_id                   = \"$EXTERNAL_ID\"" >> terraform.tfvars
-                                fi
-
-                                # Re-apply to update trust policy
-                                print_info "Re-applying terraform to update IAM trust policy..."
-                                terraform apply -auto-approve
-
-                                if [ $? -eq 0 ]; then
-                                    print_success "Trust policy updated successfully (Phase 2 complete)"
-                                else
-                                    print_error "Trust policy update failed"
-                                    print_info "You can run manually: cd $TABLEFLOW_TERRAFORM_DIR && terraform apply"
-                                fi
-                            else
-                                print_success "Trust policy already configured"
-                            fi
-                        else
-                            print_warning "Could not retrieve valid Confluent role ARN from provider integration"
-                            print_info "Trust policy update required manually"
-                            print_info "Run: cd $TABLEFLOW_TERRAFORM_DIR && terraform output"
-                        fi
-                    else
-                        print_warning "Provider integration not created yet"
-                        print_info "Trust policy will remain deny-all until provider integration is created"
-                    fi
-                else
-                    print_error "Tableflow deployment failed. Check errors above."
-                fi
-
-                cd - > /dev/null
+            # One implementation for both this script and `make tableflow-up`
+            if "${SCRIPT_DIR}/tableflow.sh" up; then
+                TABLEFLOW_DEPLOYED=true
             else
-                print_warning "terraform.tfvars could not be created automatically"
-                print_info "Run manually: cd $TABLEFLOW_TERRAFORM_DIR && make deploy"
-                cd - > /dev/null
+                print_error "Tableflow deployment failed. Check errors above."
             fi
         else
             print_info "Skipping Tableflow deployment"
@@ -635,7 +432,7 @@ else
 fi
 
 echo ""
-print_info "To populate topics with data: ${YELLOW}cd environment && ./generate-data.sh${NC}"
+print_info "To populate topics with data: ${YELLOW}make data${NC}"
 
 echo -e "\n${CYAN}${BOLD}Quick Access Links:${NC}"
 cd "$TERRAFORM_DIR"
@@ -667,18 +464,18 @@ echo -e '     '"${YELLOW}\"Tag corebank and digital topics with 'c360' and 'sour
 echo ""
 echo -e "  ${BOLD}3. Build streaming aggregation${NC}"
 echo -e '     '"${YELLOW}\"Create a Flink aggregation that joins customers, accounts,\"${NC}"
-echo -e '     '"${YELLOW} transactions, and digital interactions into c360.snapshot\"${NC}"
+echo -e '     '"${YELLOW} transactions, and digital interactions into c360_snapshot\"${NC}"
 echo ""
 echo -e "  ${BOLD}4. Enhance with behavioral data${NC}"
 echo -e '     '"${YELLOW}\"Add the last 3 digital interactions per customer\"${NC}"
 echo ""
 echo -e "  ${BOLD}5. Tag the data product${NC}"
-echo -e '     '"${YELLOW}\"Tag c360.snapshot as 'data_product' and 'c360'\"${NC}"
+echo -e '     '"${YELLOW}\"Tag c360_snapshot as 'data_product' and 'c360'\"${NC}"
 
 if [ "$TABLEFLOW_DEPLOYED" = true ]; then
     echo ""
     echo -e "  ${BOLD}6. Enable Tableflow (optional)${NC}"
-    echo -e '     '"${YELLOW}\"Enable Tableflow on c360.snapshot topic with Iceberg format\"${NC}"
+    echo -e '     '"${YELLOW}\"Enable Tableflow on c360_snapshot topic with Iceberg format\"${NC}"
     echo ""
     echo -e "  ${BOLD}7. Create Glue catalog integration (optional)${NC}"
     echo -e '     '"${YELLOW}\"Create AWS Glue catalog integration for tableflow\"${NC}"

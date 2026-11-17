@@ -134,7 +134,7 @@ output "next_steps" {
     📚 Documentation:
        - Tableflow Docs: https://docs.confluent.io/cloud/current/topics/tableflow/
        - AWS S3 Console: https://s3.console.aws.amazon.com/s3/buckets/${aws_s3_bucket.tableflow_storage.id}
-       - IAM Console: https://console.aws.amazon.com/iam/home?region=${var.aws_region}#/roles/${var.iam_role_name}
+       - IAM Console: https://console.aws.amazon.com/iam/home?region=${var.aws_region}#/roles/${aws_iam_role.tableflow_role.name}
 
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   EOT
@@ -151,5 +151,5 @@ output "current_trust_policy_status" {
 
 output "trust_policy_update_command" {
   description = "AWS CLI command to view the current trust policy"
-  value       = "aws iam get-role --role-name ${var.iam_role_name} --query 'Role.AssumeRolePolicyDocument' --output json"
+  value       = "aws iam get-role --role-name ${aws_iam_role.tableflow_role.name} --query 'Role.AssumeRolePolicyDocument' --output json"
 }

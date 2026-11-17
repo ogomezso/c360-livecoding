@@ -19,7 +19,7 @@ variable "environment_name" {
 }
 
 variable "environment_display_name" {
-  description = "Display name for the Confluent Cloud environment (alphanumeric, hyphens, underscores only)"
+  description = "Base display name for the Confluent Cloud environment (alphanumeric, hyphens, underscores only). The deployment suffix is appended: <name>-<suffix>"
   type        = string
   default     = "customer-360-demo-environment"
 
@@ -82,7 +82,7 @@ variable "flink_max_cfu" {
 
 # Service Account configuration
 variable "service_account_name" {
-  description = "Name for the service account"
+  description = "Base name for the service account. The deployment suffix is appended: <name>-<suffix>"
   type        = string
   default     = "customer-360-sa"
 }
@@ -101,5 +101,17 @@ variable "tags" {
     project     = "customer-360"
     environment = "demo"
     managed_by  = "terraform"
+  }
+}
+
+# Per-deployment suffix
+variable "name_suffix" {
+  description = "Suffix appended to the environment and service account names so several demos can share one organization. Leave empty to generate a random 8-character hex suffix (stable for the life of the deployment); set it to use a fixed one, e.g. your alias."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,22}[a-z0-9])?$", var.name_suffix)) || var.name_suffix == ""
+    error_message = "name_suffix must be empty, or 1-24 characters: lowercase letters, digits and hyphens, starting and ending with a letter or digit."
   }
 }

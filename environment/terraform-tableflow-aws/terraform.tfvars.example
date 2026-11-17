@@ -104,3 +104,7 @@ tags = {
   Purpose     = "tableflow-storage"
   Project     = "customer-360"
 }
+
+# name_suffix is set automatically by scripts/tableflow.sh to the Confluent deployment's suffix,
+# so the IAM role is <iam_role_name>-<suffix>. Leave it unset to use this stack's own random suffix.
+# name_suffix = ""

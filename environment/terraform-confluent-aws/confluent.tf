@@ -1,6 +1,17 @@
+# Per-deployment suffix, generated once and kept in state (a rebuild after destroy gets a new one).
+# Environment and service-account names are unique-ish across an organization, so without this two
+# demos in the same org collide. Same 8-hex convention used by other environments in the org.
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+locals {
+  name_suffix = var.name_suffix != "" ? var.name_suffix : random_id.suffix.hex
+}
+
 # Create Confluent Cloud Environment
 resource "confluent_environment" "customer_360" {
-  display_name = var.environment_display_name
+  display_name = "${var.environment_display_name}-${local.name_suffix}"
 
   lifecycle {
     prevent_destroy = false
@@ -36,7 +47,7 @@ resource "confluent_kafka_cluster" "customer_360" {
 
 # Create Service Account for the application
 resource "confluent_service_account" "customer_360_app" {
-  display_name = var.service_account_name
+  display_name = "${var.service_account_name}-${local.name_suffix}"
   description  = var.service_account_description
 }
 

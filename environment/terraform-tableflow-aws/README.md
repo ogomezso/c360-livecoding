@@ -33,7 +33,7 @@ This module provisions:
 │                   │                                              │
 │                   ▼                                              │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │ IAM Role: customer-360-tableflow-role                    │   │
+│  │ IAM Role: customer-360-tableflow-role-<suffix>                    │   │
 │  │  - Trust Policy: Allow Confluent role with External ID   │   │
 │  │  - Permission Policy: S3 access to bucket                │   │
 │  └─────────────────────────────────────────────────────────┘   │
@@ -114,7 +114,7 @@ confluent_cluster_id       = "lkc-xxxxx"  # From terraform-confluent-aws
 
 # Optional: Customize names
 bucket_name_prefix                 = "customer-360-tableflow-storage"
-iam_role_name                      = "customer-360-tableflow-role"
+iam_role_name                      = "customer-360-tableflow-role"   # the deployed role is <iam_role_name>-<suffix>
 provider_integration_display_name  = "customer-360-tableflow-integration"
 
 # Provider Integration
@@ -168,7 +168,7 @@ terraform apply
 
 4. Verify the trust policy was updated:
 ```bash
-aws iam get-role --role-name customer-360-tableflow-role \
+aws iam get-role --role-name customer-360-tableflow-role-<suffix> \
   --query 'Role.AssumeRolePolicyDocument' --output json
 ```
 
@@ -183,7 +183,7 @@ Or manually:
 ```bash
 export TABLEFLOW_S3_BUCKET_NAME="customer-360-tableflow-storage-xxxxx"
 export TABLEFLOW_S3_BUCKET_REGION="eu-west-1"
-export TABLEFLOW_IAM_ROLE_ARN="arn:aws:iam::xxxxx:role/customer-360-tableflow-role"
+export TABLEFLOW_IAM_ROLE_ARN="arn:aws:iam::xxxxx:role/customer-360-tableflow-role-<suffix>"
 export TABLEFLOW_PROVIDER_INTEGRATION_ID="cspi-xxxxx"
 export CONFLUENT_ENVIRONMENT_ID="env-xxxxx"
 export CONFLUENT_CLUSTER_ID="lkc-xxxxx"
@@ -243,16 +243,16 @@ aws s3api get-public-access-block --bucket customer-360-tableflow-storage-xxxxx
 
 Check IAM role:
 ```bash
-aws iam get-role --role-name customer-360-tableflow-role
-aws iam list-role-policies --role-name customer-360-tableflow-role
-aws iam get-role-policy --role-name customer-360-tableflow-role --policy-name tableflow-s3-access
+aws iam get-role --role-name customer-360-tableflow-role-<suffix>
+aws iam list-role-policies --role-name customer-360-tableflow-role-<suffix>
+aws iam get-role-policy --role-name customer-360-tableflow-role-<suffix> --policy-name tableflow-s3-access
 ```
 
 ### Verify Trust Policy
 
 After Phase 2, verify the trust policy allows Confluent:
 ```bash
-aws iam get-role --role-name customer-360-tableflow-role \
+aws iam get-role --role-name customer-360-tableflow-role-<suffix> \
   --query 'Role.AssumeRolePolicyDocument.Statement[0]' --output json
 ```
 
@@ -359,7 +359,7 @@ The random suffix should prevent this, but if it happens:
 | Resource Type | Name | Purpose |
 |---------------|------|---------|
 | S3 Bucket | `customer-360-tableflow-storage-XXXX` | Stores Iceberg/Delta table files |
-| IAM Role | `customer-360-tableflow-role` | Allows Confluent to access S3 |
+| IAM Role | `customer-360-tableflow-role-<suffix>` | Allows Confluent to access S3 |
 | IAM Policy | `tableflow-s3-access` | Grants S3 permissions to IAM role |
 | Provider Integration | `customer-360-tableflow-integration` | Links Confluent to AWS IAM role |
 | Random ID | 4-byte hex suffix | Ensures bucket name uniqueness |

@@ -14,12 +14,14 @@ set -e
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_GEN_DIR="${SCRIPT_DIR}/data-generation"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_DIR="$ROOT_DIR/environment"
+DATA_GEN_DIR="${ENV_DIR}/data-generation"
 PRODUCERS_DIR="${DATA_GEN_DIR}/producers"
 VENV_DIR="${DATA_GEN_DIR}/.venv"
-TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
+TERRAFORM_DIR="${ENV_DIR}/terraform-confluent-aws"
 MCP_HOME="${HOME}/.confluent-mcp"
-MCP_LOCAL="${SCRIPT_DIR}/mcp-confluent"
+MCP_LOCAL="${ENV_DIR}/mcp-confluent"
 
 # Colors
 RED='\033[0;31m'
@@ -243,7 +245,12 @@ main() {
     echo "  Interactions: $INTERACTIONS"
     echo ""
 
-    read -p "Continue? [Y/n]: " confirm
+    # ASSUME_YES=1 (set by `make data`) skips the confirmation prompt.
+    if [ "${ASSUME_YES:-}" = "1" ]; then
+        confirm=Y
+    else
+        read -p "Continue? [Y/n]: " confirm
+    fi
     confirm=${confirm:-Y}
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         log_info "Data generation cancelled"

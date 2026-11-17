@@ -11,8 +11,10 @@ set -e
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/terraform-confluent-aws"
-MCP_HOME="${SCRIPT_DIR}/mcp-confluent"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_DIR="$ROOT_DIR/environment"
+TERRAFORM_DIR="${ENV_DIR}/terraform-confluent-aws"
+MCP_HOME="${ENV_DIR}/mcp-confluent"
 
 # Colors for output
 RED='\033[0;31m'
@@ -169,7 +171,7 @@ remove_mcp_server() {
 remove_project_mcp_config() {
     log_section "Step 3: Removing Project MCP Configuration"
 
-    local project_mcp="${SCRIPT_DIR}/../.mcp.json"
+    local project_mcp="${ROOT_DIR}/.mcp.json"
 
     if [ ! -f "$project_mcp" ]; then
         log_info "Project MCP configuration not found, skipping..."
@@ -182,7 +184,7 @@ remove_project_mcp_config() {
     log_success "Project MCP configuration removed"
 
     if command -v claude >/dev/null 2>&1; then
-        (cd "${SCRIPT_DIR}/.." && claude mcp reset-project-choices >/dev/null 2>&1) || true
+        (cd "${ROOT_DIR}" && claude mcp reset-project-choices >/dev/null 2>&1) || true
         log_info "Reset Claude Code's project MCP approval state"
     fi
 }
@@ -229,7 +231,7 @@ display_completion() {
         echo -e "  ${GREEN}✅ MCP credentials removed${NC}"
     fi
 
-    local project_mcp="${SCRIPT_DIR}/../.mcp.json"
+    local project_mcp="${ROOT_DIR}/.mcp.json"
     if [ -f "$project_mcp" ]; then
         echo -e "  ${YELLOW}⚠️  Project MCP configuration still exists${NC}"
     else
@@ -244,7 +246,7 @@ display_completion() {
 
     echo ""
     echo -e "${CYAN}🔄 To redeploy:${NC}"
-    echo "  ./bootstrap.sh"
+    echo "  make up   (or scripts/bootstrap.sh)"
     echo ""
 }
 

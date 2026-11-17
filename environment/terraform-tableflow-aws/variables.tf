@@ -125,3 +125,9 @@ variable "create_provider_integration" {
   type        = bool
   default     = true
 }
+
+variable "name_suffix" {
+  description = "Suffix for the IAM role name. Normally set by scripts/tableflow.sh to the Confluent deployment's suffix so one demo shares one suffix; empty falls back to this stack's own random suffix."
+  type        = string
+  default     = ""
+}
