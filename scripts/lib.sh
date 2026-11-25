@@ -34,4 +34,13 @@ load_cc_creds() {
 tf_out()  { local o; o="$(terraform -chdir="$1" output -raw "$2" 2>/dev/null)" || return 1; [ -n "$o" ] || return 1; printf '%s' "$o"; }
 tf_json() { local o; o="$(terraform -chdir="$1" output -json "$2" 2>/dev/null)" || return 1; printf '%s' "$o"; }
 
+# The table the second half of the demo (Trino, Lightning, live front end) works on: the pre-built twin once it exists,
+# otherwise the live-built c360_snapshot. DEMO_TOPIC overrides.
+demo_topic() {
+  if [ -n "${DEMO_TOPIC:-}" ]; then printf '%s' "$DEMO_TOPIC"; return; fi
+  local f="$ROOT/environment/prebuilt/.state/prebuilt.env" t=""
+  [ -f "$f" ] && t="$(sed -n 's/^TOPIC=//p' "$f" | head -1)"
+  printf '%s' "${t:-${SNAPSHOT_TOPIC:-c360_snapshot}}"
+}
+
 need() { command -v "$1" >/dev/null 2>&1 || die "'$1' not found in PATH"; }

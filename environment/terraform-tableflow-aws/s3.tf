@@ -7,6 +7,9 @@ resource "random_id" "suffix" {
 resource "aws_s3_bucket" "tableflow_storage" {
   bucket = "${var.bucket_name_prefix}-${random_id.suffix.hex}"
 
+  # Tableflow writes Iceberg/Delta files here; without this `terraform destroy` fails with BucketNotEmpty.
+  force_destroy = var.bucket_force_destroy
+
   tags = merge(
     var.tags,
     {

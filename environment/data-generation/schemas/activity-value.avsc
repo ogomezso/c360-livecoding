@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "LiveActivity",
+  "namespace": "com.example.c360",
+  "doc": "One customer event for the live feed: a digital interaction or a card purchase, written by a plain producer (no Flink) so a Lightning Table shows it within about a second",
+  "fields": [
+    { "name": "event_id", "type": "string", "doc": "Unique event identifier (the key)" },
+    { "name": "customer_id", "type": "string" },
+    { "name": "full_name", "type": "string" },
+    { "name": "segment", "type": "string" },
+    { "name": "kind", "type": "string", "doc": "INTERACTION or PURCHASE" },
+    { "name": "action", "type": "string", "doc": "Interaction type (LOGIN, VIEW_BALANCE, PAYMENT...) or the merchant of a purchase" },
+    { "name": "channel", "type": "string" },
+    { "name": "amount", "type": ["null", "double"], "default": null, "doc": "Purchase amount in EUR (negative for a debit); null for interactions" },
+    { "name": "ts", "type": { "type": "long", "logicalType": "timestamp-millis" }, "doc": "When the event happened" }
+  ]
+}

@@ -1,0 +1,56 @@
+# Apache Polaris (open source Iceberg REST catalog) for the Customer 360 demo.
+# Rendered by scripts/polaris.sh with envsubst (needs $POLARIS_ROOT_SECRET). The Secret `polaris-aws` (access key of the
+# IAM user that may assume the read-only role) is created by the script, not stored here.
+# In-memory persistence: state is lost when the pod restarts, so scripts/polaris.sh re-bootstraps the catalog on every `up`.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: polaris
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: polaris-config }
+data:
+  application.properties: |
+    polaris.features."ENABLE_CATALOG_FEDERATION"=true
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: polaris-bootstrap }
+stringData:
+  POLARIS_BOOTSTRAP_CREDENTIALS: "POLARIS,root,${POLARIS_ROOT_SECRET}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: polaris }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: polaris } }
+  template:
+    metadata:
+      labels:
+        app: polaris
+    spec:
+      serviceAccountName: polaris
+      containers:
+      - name: polaris
+        image: apache/polaris:1.8.0
+        ports: [ { containerPort: 8181 }, { containerPort: 8182 } ]
+        envFrom:
+        - secretRef: { name: polaris-bootstrap }
+        - secretRef: { name: polaris-aws }
+        volumeMounts:
+        - name: cfg
+          mountPath: /deployments/config/application.properties
+          subPath: application.properties
+        readinessProbe: { tcpSocket: { port: 8181 }, initialDelaySeconds: 10, periodSeconds: 5 }
+      volumes:
+      - name: cfg
+        configMap: { name: polaris-config }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: polaris }
+spec:
+  selector: { app: polaris }
+  ports: [ { name: api, port: 8181, targetPort: 8181 } ]

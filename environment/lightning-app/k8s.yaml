@@ -1,0 +1,40 @@
+# Customer 360 live view on the kind cluster. Rendered by scripts/lightning.sh with envsubst
+# (needs $LIGHTNING_URL $LIGHTNING_ENV_ID $LIGHTNING_CLUSTER_ID $LIGHTNING_TABLE $LIGHTNING_ACTIVITY_TABLE). Two Secrets are created by the script, never stored here:
+#   lightning-reader  LIGHTNING_KEY / LIGHTNING_SECRET   Global API key of a READ-ONLY service account (queries)
+#   demo-writer       Kafka + Schema Registry credentials  used only by the "Make something happen" button
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: c360-live }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: c360-live } }
+  template:
+    metadata:
+      labels:
+        app: c360-live
+    spec:
+      containers:
+      - name: app
+        image: c360-live:v1
+        imagePullPolicy: IfNotPresent
+        ports: [ { containerPort: 8088 } ]
+        env:
+        - { name: LIGHTNING_URL, value: "${LIGHTNING_URL}" }
+        - { name: LIGHTNING_ENV_ID, value: "${LIGHTNING_ENV_ID}" }
+        - { name: LIGHTNING_CLUSTER_ID, value: "${LIGHTNING_CLUSTER_ID}" }
+        - { name: TABLE, value: "${LIGHTNING_TABLE}" }
+        - { name: ACTIVITY_TABLE, value: "${LIGHTNING_ACTIVITY_TABLE}" }
+        envFrom:
+        - secretRef: { name: lightning-reader }
+        - secretRef: { name: demo-writer, optional: true }
+        readinessProbe: { httpGet: { path: /healthz, port: 8088 }, periodSeconds: 5 }
+        resources:
+          requests: { cpu: 100m, memory: 384Mi }
+          limits: { memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: c360-live }
+spec:
+  selector: { app: c360-live }
+  ports: [ { name: http, port: 80, targetPort: 8088 } ]

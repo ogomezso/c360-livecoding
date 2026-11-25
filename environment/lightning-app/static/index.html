@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer 360 Live</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2333; --muted: #667085; --line: #e3e6ec;
+    --accent: #0b6bcb; --accent-ink: #ffffff; --good: #107c41; --warn: #b54708; --bad: #b42318;
+    --flash: #fff3bf; --new: #d9f2e3; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1420; --panel: #171e2e; --ink: #e8ecf5; --muted: #98a2b8; --line: #27314a;
+      --accent: #4c9aff; --accent-ink: #08111f; --good: #4ade80; --warn: #fbbf24; --bad: #f87171;
+      --flash: #5b4a0f; --new: #14452b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1420; --panel: #171e2e; --ink: #e8ecf5; --muted: #98a2b8; --line: #27314a;
+    --accent: #4c9aff; --accent-ink: #08111f; --good: #4ade80; --warn: #fbbf24; --bad: #f87171;
+    --flash: #5b4a0f; --new: #14452b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  h1 small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; letter-spacing: 0; }
+  .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--good); box-shadow: 0 0 0 0 var(--good); animation: pulse 1.6s infinite; }
+  .dot.wait { background: var(--warn); }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: progress; }
+  button.ghost { background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-weight: 500; padding: 5px 10px; }
+  .banner { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); margin-bottom: 16px; }
+  .banner.warn { border-color: var(--warn); }
+  .pending { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--accent); background: var(--panel); margin-bottom: 16px; }
+  .pending .bar { height: 6px; border-radius: 3px; background: var(--line); margin: 8px 0 6px; overflow: hidden; }
+  .pending .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .9s linear; }
+  .pending.done { border-color: var(--good); } .pending.done .bar i { background: var(--good); }
+  .feed { margin-bottom: 16px; }
+  .speed { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); vertical-align: middle; }
+  .speed.fast { color: var(--good); border-color: var(--good); } .speed.slow { color: var(--warn); border-color: var(--warn); }
+  .lane { display: flex; gap: 10px; align-items: baseline; margin-top: 6px; } .lane .ok { color: var(--good); } .lane .wait { color: var(--muted); }
+  .pending li { list-style: none; } .pending ul { margin: 6px 0 0; padding: 0; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 14px 10px; min-width: 0; }
+  section h2 { font-size: 14px; margin: 0 0 2px; }
+  section p.ask { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  tr.sel td { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  tr.flash td { animation: flash 2.4s ease-out; }
+  tr.new td { animation: isnew 3.2s ease-out; }
+  @keyframes flash { from { background: var(--flash); } }
+  @keyframes isnew { from { background: var(--new); } }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.PRIVATE { color: var(--accent); border-color: var(--accent); } .tag.PREMIER { color: var(--good); border-color: var(--good); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .muted { color: var(--muted); }
+  .chain { white-space: nowrap; }
+  .card { margin-top: 16px; }
+  .card .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 22px; margin-top: 6px; }
+  .kv { padding: 6px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; }
+  .kv span:first-child { color: var(--muted); } .kv b { font-weight: 600; text-align: right; }
+  .kv.changed { animation: flash 3s ease-out; }
+  details { margin-top: 14px; } summary { cursor: pointer; color: var(--muted); }
+  pre { margin: 8px 0 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; overflow: auto; font: 12px/1.5 var(--mono); white-space: pre-wrap; }
+  .toast { position: fixed; right: 16px; bottom: 16px; max-width: 440px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.18); display: none; }
+  .toast.show { display: block; } .toast pre { max-height: 220px; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Customer 360 — live<small id="subtitle">Lightning Table on c360_snapshot</small></h1>
+    <span class="pill" id="status"><span class="dot wait"></span><span>connecting…</span></span>
+    <span class="pill" id="fresh" title="Round trip of the slowest query, and how long ago the page refreshed">—</span>
+    <span class="spacer"></span>
+    <button id="changes" hidden>Make something happen</button>
+    <button class="ghost" id="theme" title="Switch light / dark">◐</button>
+  </header>
+
+  <div class="banner warn" id="banner" hidden></div>
+  <div class="pending" id="pending" hidden></div>
+
+  <section class="feed" id="feedsec" hidden>
+    <h2>Live event feed — every event, the moment it happens <span class="speed fast">~1 s</span></h2>
+    <p class="ask" id="feed-ask">Raw events from a plain producer into <code id="feed-table"></code>: no Flink in the path, so a Lightning Table shows them within about a second.</p>
+    <table><thead><tr><th>Customer</th><th>Seg.</th><th>Event</th><th>When</th></tr></thead><tbody id="feed"></tbody></table>
+  </section>
+
+  <div class="grid">
+    <section>
+      <h2>Customer 360 — who touched our digital channels last <span class="speed slow">~1 min</span></h2>
+      <p class="ask">Computed by a Flink statement, so it follows the events when Flink commits (about a minute). Click a row to open that customer's 360 card.</p>
+      <table><thead><tr><th>Customer</th><th>Seg.</th><th>Last three actions</th><th>Last seen</th><th>Last purchase</th></tr></thead><tbody id="live"></tbody></table>
+    </section>
+    <section>
+      <h2>Never used digital — richest first</h2>
+      <p class="ask">Re-engagement list. Customers leave it the moment they log in.</p>
+      <table><thead><tr><th>Customer</th><th>Seg.</th><th class="num">Assets €</th></tr></thead><tbody id="inactive"></tbody></table>
+    </section>
+  </div>
+
+  <section class="card" id="card" hidden>
+    <h2 id="card-title">Customer card</h2>
+    <p class="ask">One key lookup returns everything: profile, products, balances, spend and the last three digital actions.</p>
+    <div class="cols" id="card-body"></div>
+  </section>
+
+  <details>
+    <summary>How this screen queries the Lightning Table (JDBC) and the SQL it sends</summary>
+    <pre id="sql">(waiting for the first answer)</pre>
+  </details>
+  <footer>Queried over JDBC (<code>jdbc:confluent:lightning://</code>) with a read-only identity · Lightning queries support key lookups, filters, ORDER BY and LIMIT — no joins or aggregates, which is why the data product is precomputed in <code>c360_snapshot</code>.</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const el = (tag, props = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) { if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else n.setAttribute(k, v); }
+  for (const kid of kids) if (kid != null) n.append(kid);
+  return n;
+};
+const eur = (v) => (v == null || v === '' ? '—' : Math.round(Number(v)).toLocaleString('en-GB'));
+const parseTs = (v) => {
+  if (v == null || v === '') return null;
+  if (!isNaN(Number(v))) { const n = Number(v); return n > 1e11 ? n : n * 1000; }
+  const s = String(v); const iso = s.includes('T') ? s : s.replace(' ', 'T');
+  // Lightning returns '2026-11-24 15:40:12.781+00': Date.parse needs the offset as +HH:MM
+  const full = iso.replace(/([+-]\d\d)$/, '$1:00').replace(/([+-]\d\d)(\d\d)$/, '$1:$2');
+  const t = Date.parse(/Z|[+-]\d\d:\d\d$/.test(full) ? full : full + 'Z');
+  return isNaN(t) ? null : t;
+};
+const ago = (ts, now) => {
+  if (ts == null) return '—'; const s = Math.max(0, Math.round((now - ts) / 1000));
+  if (s < 90) return `${s}s ago`; if (s < 5400) return `${Math.round(s / 60)} min ago`;
+  if (s < 172800) return `${Math.round(s / 3600)} h ago`; return `${Math.round(s / 86400)} days ago`;
+};
+const action = (type, channel) => (type ? (channel ? `${type} · ${channel.toLowerCase()}` : type) : null);
+
+let selected = null, prevLive = new Map(), prevCard = null, config = {}, lastOk = 0, highlight = new Set();
+
+async function getJson(url, init) { const r = await fetch(url, init); return r.json(); }
+
+function setStatus(ready, text) {
+  $('#status').replaceChildren(el('span', { class: 'dot ' + (ready ? 'live' : 'wait') }), el('span', { text }));
+}
+
+function renderLive(rows, now) {
+  const body = $('#live'); const next = new Map(); const nodes = [];
+  for (const r of rows) {
+    const sig = JSON.stringify(r); next.set(r.customer_id, sig);
+    const known = prevLive.size > 0;
+    const cls = [r.customer_id === selected ? 'sel' : '',
+                 known && !prevLive.has(r.customer_id) ? 'new' : (known && prevLive.get(r.customer_id) !== sig ? 'flash' : ''),
+                 highlight.has(r.customer_id) ? 'new' : ''].filter(Boolean).join(' ');
+    const tr = el('tr', { class: cls, 'data-id': r.customer_id },
+      el('td', {}, el('b', { text: r.full_name }), el('div', { class: 'muted', text: r.relationship_manager || '(no relationship manager)' })),
+      el('td', {}, el('span', { class: 'tag ' + r.segment, text: r.segment })),
+      el('td', { class: 'chain' },
+        el('b', { text: action(r.interaction_1_type, r.interaction_1_channel) }),
+        el('div', { class: 'muted', text: [r.interaction_2_type, r.interaction_3_type].filter(Boolean).join(' ← ') })),
+      el('td', { text: ago(parseTs(r.interaction_1_ts), now) }),
+      el('td', {}, r.last_txn_merchant ? el('span', { text: `${r.last_txn_merchant} ` }) : null,
+                   r.last_txn_amount != null ? el('span', { class: 'muted', text: `${Number(r.last_txn_amount).toFixed(2)} €` }) : null));
+    tr.addEventListener('click', () => select(r.customer_id));
+    nodes.push(tr);
+  }
+  body.replaceChildren(...nodes); prevLive = next;
+}
+
+function renderInactive(rows) {
+  $('#inactive').replaceChildren(...rows.map((r) => {
+    const tr = el('tr', { class: r.customer_id === selected ? 'sel' : '' },
+      el('td', {}, el('b', { text: r.full_name }), el('div', { class: 'muted', text: r.relationship_manager || '(no relationship manager)' })),
+      el('td', {}, el('span', { class: 'tag ' + r.segment, text: r.segment })),
+      el('td', { class: 'num', text: eur(r.total_assets) }));
+    tr.addEventListener('click', () => select(r.customer_id));
+    return tr;
+  }));
+}
+
+const CARD_FIELDS = [
+  ['Segment', (r) => r.segment], ['Risk band', (r) => r.risk_band], ['Relationship manager', (r) => r.relationship_manager || '—'],
+  ['Open accounts', (r) => `${r.open_account_count} of ${r.account_count}`],
+  ['Assets €', (r) => eur(r.total_assets)], ['Liabilities €', (r) => eur(r.total_liabilities)], ['Net balance €', (r) => eur(r.net_balance)],
+  ['Purchases', (r) => `${r.txn_count} · ${eur(r.total_spend)} € spent`],
+  ['Last purchase', (r) => (r.last_txn_merchant ? `${r.last_txn_merchant} ${Number(r.last_txn_amount).toFixed(2)} €` : '—')],
+  ['Last action', (r) => action(r.interaction_1_type, r.interaction_1_channel) || '— never used digital'],
+  ['Before that', (r) => action(r.interaction_2_type, r.interaction_2_channel) || '—'],
+  ['And before', (r) => action(r.interaction_3_type, r.interaction_3_channel) || '—'],
+];
+
+function renderCard(row) {
+  $('#card').hidden = false; $('#card-title').textContent = row ? `${row.full_name} — customer 360 card` : 'Customer not found';
+  const kids = [];
+  if (row) for (const [label, get] of CARD_FIELDS) {
+    const value = String(get(row)); const changed = prevCard && prevCard.id === row.customer_id && prevCard.values[label] !== value;
+    kids.push(el('div', { class: 'kv' + (changed ? ' changed' : '') }, el('span', { text: label }), el('b', { text: value })));
+  }
+  $('#card-body').replaceChildren(...kids);
+  prevCard = row ? { id: row.customer_id, values: Object.fromEntries(CARD_FIELDS.map(([l, g]) => [l, String(g(row))])) } : null;
+}
+
+async function refreshCard() {
+  if (!selected) return;
+  try { const d = await getJson('/api/card?id=' + encodeURIComponent(selected)); if (!d.error) renderCard(d.row); } catch (e) { /* next tick */ }
+}
+function select(id) { selected = id; prevCard = null; refreshCard(); }
+
+// What the button started. Two lanes: the live feed (plain producer -> Lightning, about a second) and the Customer 360 table
+// (Flink -> Lightning: Flink commits its Kafka transaction about once a minute and Lightning reads only committed data).
+let pend = null, feedInit = false, prevFeed = new Set();
+const secs1 = (ms) => (ms / 1000).toFixed(ms < 10000 ? 1 : 0);
+
+function noteFeed(rows) {                      // fast lane: did events of this press reach the feed?
+  if (!pend || pend.fast || !rows) return;
+  const mine = rows.map((r) => parseTs(r.ts)).filter((t) => t != null && t >= pend.clickAt - 2000);
+  if (mine.length) { const newest = Math.max(...mine); pend.eventAt = newest; pend.fast = Math.max(0, Date.now() - newest); }
+}
+
+async function trackPending() {
+  if (!pend) return;
+  const box = $('#pending'); const now = Date.now();
+  for (const c of pend.customers) {            // slow lane: has the customer's card caught up?
+    if (c.arrived) continue;
+    try {
+      const d = await getJson('/api/card?id=' + encodeURIComponent(c.id));
+      const ts = d.row ? parseTs(d.row.interaction_1_ts) : null;
+      if (ts != null && ts >= pend.startedAt) { c.arrived = true; c.lag = Math.max(0, Date.now() - ts); c.name = d.row.full_name; c.action = action(d.row.interaction_1_type, d.row.interaction_1_channel); highlight.add(c.id); }
+      else if (d.row) c.name = d.row.full_name;
+    } catch (e) { /* next tick */ }
+  }
+  const total = pend.customers.length, left = pend.customers.filter((c) => !c.arrived).length;
+  const sinceEvent = now - (pend.eventAt || pend.startedAt || pend.clickAt);
+  const finished = total > 0 && left === 0;
+  box.hidden = false; box.classList.toggle('done', finished);
+  const lanes = [];
+  if (pend.hasFeed) lanes.push(el('div', { class: 'lane' },
+    el('span', { class: pend.fast != null ? 'ok' : 'wait', text: pend.fast != null ? '✓' : '…' }),
+    el('span', {}, el('b', { text: 'Live feed' }), el('span', { class: 'muted', text: ' (producer → Lightning): ' }),
+      el('span', { text: pend.fast != null ? `visible ${secs1(pend.fast)} s after the event` : 'waiting for the first event…' }))));
+  const slowLag = finished ? Math.max(...pend.customers.map((c) => c.lag)) : null;
+  lanes.push(el('div', { class: 'lane' },
+    el('span', { class: finished ? 'ok' : 'wait', text: finished ? '✓' : '…' }),
+    el('span', {}, el('b', { text: 'Customer 360' }), el('span', { class: 'muted', text: ' (Flink → Lightning): ' }),
+      el('span', { text: finished ? `all ${total} customers updated ${secs1(slowLag)} s after the event`
+                                  : total ? `waiting for Flink's commit — ${Math.round(sinceEvent / 1000)} s (up to ~60 s)` : 'waiting for the events to be produced…' }))));
+  box.replaceChildren(
+    el('b', { text: finished ? 'Both lanes updated' : 'You pressed the button — watch the two speeds' }),
+    ...lanes,
+    el('div', { class: 'bar' }, el('i', { style: `width:${finished ? 100 : Math.min(95, sinceEvent / 60000 * 100)}%` })),
+    el('ul', {}, ...pend.customers.map((c) => el('li', { text: `${c.arrived ? '✓' : '…'} ${c.name || c.id}${c.arrived && c.action ? ' — now ' + c.action : ''}` }))));
+  if (finished || now - pend.clickAt > 180000) { const p = pend; pend = null; setTimeout(() => { if (!pend) box.hidden = true; }, 30000); setTimeout(() => { for (const c of p.customers) highlight.delete(c.id); }, 12000); }
+}
+
+function renderFeed(a, now) {
+  const sec = $('#feedsec'); if (!a) { sec.hidden = true; return; }
+  sec.hidden = false; $('#feed-table').textContent = a.table;
+  const body = $('#feed'); const note = (text) => body.replaceChildren(el('tr', {}, el('td', { colspan: 4, class: 'muted', text })));
+  if (!a.ready) { note(a.message || 'The live feed is not ready yet.'); return; }
+  if (!a.rows.length) { feedInit = true; note('No events yet — press “Make something happen”.'); return; }
+  const next = new Set(); const nodes = [];
+  for (const r of a.rows) {
+    next.add(r.event_id);
+    const purchase = r.kind === 'PURCHASE';
+    const what = purchase ? `${r.action} ${Number(r.amount).toFixed(2)} €` : `${r.action} · ${(r.channel || '').toLowerCase()}`;
+    nodes.push(el('tr', { class: feedInit && !prevFeed.has(r.event_id) ? 'new' : '' },
+      el('td', {}, el('b', { text: r.full_name })),
+      el('td', {}, el('span', { class: 'tag ' + r.segment, text: r.segment })),
+      el('td', {}, el('b', { text: what }), el('span', { class: 'muted', text: purchase ? '  card purchase' : '  digital' })),
+      el('td', { text: ago(parseTs(r.ts), now) })));
+  }
+  body.replaceChildren(...nodes); prevFeed = next; feedInit = true;
+}
+
+async function tick() {
+  try {
+    const d = await getJson('/api/snapshot');
+    renderFeed(d.activity, d.server_time); noteFeed(d.activity && d.activity.ready ? d.activity.rows : null);
+    if (pend) pend.hasFeed = !!(d.activity && d.activity.ready);
+    if (!d.ready) {
+      setStatus(false, 'waiting for the Lightning Table');
+      $('#banner').hidden = false; $('#banner').textContent = d.message || 'The Lightning Table is not ready yet.';
+    } else {
+      $('#banner').hidden = true; setStatus(true, 'Lightning Table · live');
+      renderLive(d.live, d.server_time); renderInactive(d.inactive);
+      $('#fresh').textContent = `query ${d.latency_ms} ms · refreshed just now`; lastOk = Date.now();
+      $('#sql').textContent = `-- sent over JDBC (Confluent driver, read-only Global API key as user/password)\n-- ${d.jdbc_url}\n\n${d.activity && d.activity.sql ? '-- live event feed (plain producer, no Flink)\n' + d.activity.sql + ';\n\n' : ''}-- customer 360: live activity\n${d.sql.live};\n\n-- never used digital\n${d.sql.inactive};\n\n-- customer card (click a row)\nSELECT * FROM ${d.table} WHERE customer_id = '<id>';`;
+    }
+  } catch (e) { setStatus(false, 'cannot reach the app'); }
+  await refreshCard(); await trackPending();
+}
+async function loop() { await tick(); setTimeout(loop, 1000); }
+// While the button's result is pending, look at the feed alone every 0.5 s: one light query, so the fast lane is measured precisely
+async function feedLoop() {
+  if (pend && pend.hasFeed && pend.fast == null) {
+    try { const d = await getJson('/api/feed'); if (d.ready) { renderFeed(d, d.server_time); noteFeed(d.rows); } } catch (e) { /* next round */ }
+  }
+  setTimeout(feedLoop, 500);
+}
+
+$('#changes').addEventListener('click', async () => {
+  const b = $('#changes'); b.disabled = true; b.textContent = 'Adding new data…';
+  pend = { clickAt: Date.now(), startedAt: null, eventAt: null, fast: null, customers: [], hasFeed: !!$('#feedsec') && !$('#feedsec').hidden };
+  trackPending();
+  try {
+    const d = await getJson('/api/changes', { method: 'POST' });
+    if (d.ok && (d.customers || []).length && pend) {
+      pend.startedAt = d.started_at || pend.clickAt; pend.customers = d.customers.map((id) => ({ id, arrived: false }));
+    } else { pend = null; $('#pending').hidden = true; }
+    const toast = $('#toast'); toast.replaceChildren(el('b', { text: d.ok ? 'New data produced' : 'The change did not run' }), el('pre', { text: d.output || '' }));
+    toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 8000);
+  } catch (e) { pend = null; $('#pending').hidden = true; alert('The change request failed: ' + e); }
+  b.disabled = false; b.textContent = 'Make something happen';
+});
+$('#theme').addEventListener('click', () => {
+  const root = document.documentElement; const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const now = root.dataset.theme || (dark ? 'dark' : 'light'); root.dataset.theme = now === 'dark' ? 'light' : 'dark';
+});
+setInterval(() => { if (lastOk) $('#fresh').textContent = $('#fresh').textContent.replace(/refreshed .*$/, `refreshed ${Math.round((Date.now() - lastOk) / 1000)}s ago`); }, 1000);
+
+(async () => {
+  config = await getJson('/api/config');
+  $('#subtitle').textContent = `Lightning Table on ${config.table} · cluster ${config.cluster}`;
+  $('#changes').hidden = !config.changes_enabled;
+  loop(); feedLoop();
+})();
+</script>
+</body>
+</html>

@@ -1,9 +1,26 @@
 ##@ Setup
 .PHONY: check check-creds
 
-check: ## Verify required tools (terraform, jq, curl, python3, mise + the pinned Node for MCP)
+# aws and confluent are required when Tableflow is part of the build (the default)
+REQ_TOOLS := terraform jq curl python3 mise
+OPT_TOOLS := claude code
+ifeq ($(TABLEFLOW),1)
+REQ_TOOLS += aws confluent
+else
+OPT_TOOLS := aws confluent $(OPT_TOOLS)
+endif
+# Polaris + Trino run on a local kind cluster
+ifeq ($(POLARIS),1)
+REQ_TOOLS += docker kind kubectl helm envsubst openssl
+else ifeq ($(LIGHTNING),1)
+REQ_TOOLS += docker kind kubectl envsubst
+else
+OPT_TOOLS += docker kind kubectl helm
+endif
+
+check: ## Verify required tools (terraform, jq, curl, python3, mise + pinned Node; aws and confluent when TABLEFLOW=1; docker, kind, kubectl, helm unless POLARIS=0)
 	@ok=1; \
-	for t in terraform jq curl python3 mise; do \
+	for t in $(REQ_TOOLS); do \
 	  if command -v $$t >/dev/null 2>&1; then printf '  ✓ %-10s %s\n' $$t "$$(command -v $$t)"; \
 	  else printf '  ✗ %-10s MISSING (required)\n' $$t; ok=0; fi; \
 	done; \
@@ -11,7 +28,7 @@ check: ## Verify required tools (terraform, jq, curl, python3, mise + the pinned
 	  if mise where node@$(MCP_NODE_VERSION) >/dev/null 2>&1; then printf '  ✓ %-10s %s\n' node@$(MCP_NODE_VERSION) "$$(mise where node@$(MCP_NODE_VERSION))"; \
 	  else printf '  ✗ %-10s not installed — run: mise install node@$(MCP_NODE_VERSION)\n' node@$(MCP_NODE_VERSION); ok=0; fi; \
 	fi; \
-	for t in confluent aws claude code; do \
+	for t in $(OPT_TOOLS); do \
 	  if command -v $$t >/dev/null 2>&1; then printf '  ✓ %-10s (optional)\n' $$t; \
 	  else printf '  · %-10s not found (optional)\n' $$t; fi; \
 	done; \

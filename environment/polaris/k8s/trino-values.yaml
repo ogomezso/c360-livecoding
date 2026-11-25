@@ -1,0 +1,27 @@
+# Trino (Helm chart trinodb/trino) with one Iceberg catalog `polaris`, read-only, through the federated Polaris catalog.
+# Rendered by scripts/polaris.sh with envsubst (needs $POLARIS_READER_ID $POLARIS_READER_SECRET $AWS_REGION) into a git-ignored file.
+# Single node (the coordinator also runs queries) with a small heap so it fits on a laptop next to Polaris.
+# No storage credentials here: Polaris vends short-lived, table-scoped ones for every query.
+server:
+  workers: 0
+coordinator:
+  jvm:
+    maxHeapSize: "2G"
+  config:
+    nodeScheduler:
+      includeCoordinator: true   # workers: 0 alone does not make the coordinator run queries
+additionalCatalogs:
+  polaris: |
+    connector.name=iceberg
+    iceberg.catalog.type=rest
+    iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
+    iceberg.rest-catalog.warehouse=tableflow
+    iceberg.rest-catalog.view-endpoints-enabled=false
+    iceberg.rest-catalog.security=OAUTH2
+    iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    iceberg.rest-catalog.oauth2.credential=${POLARIS_READER_ID}:${POLARIS_READER_SECRET}
+    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    iceberg.rest-catalog.vended-credentials-enabled=true
+    fs.native-s3.enabled=true
+    s3.region=${AWS_REGION}
+    iceberg.security=read_only

@@ -131,3 +131,9 @@ variable "name_suffix" {
   type        = string
   default     = ""
 }
+
+variable "bucket_force_destroy" {
+  description = "Delete the bucket even if it contains objects when destroying. True for a demo, where the bucket only holds Tableflow output; set false to protect data."
+  type        = bool
+  default     = true
+}

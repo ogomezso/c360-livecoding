@@ -23,6 +23,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 need terraform; need jq; need curl
 
 DRY_RUN="${DRY_RUN:-0}"; YES="${YES:-0}"
+# The pre-built twin (scripts/prebuilt.sh) is part of the BUILD, not of the live session: reset must never touch it.
+PREBUILT_TOPIC="${PREBUILT_TOPIC:-c360_snapshot_prebuilt}"; PREBUILT_STATEMENT_PREFIX="c360-prebuilt-"
+ACTIVITY_TOPIC="${ACTIVITY_TOPIC:-c360_live_activity}"   # the fast live-feed topic is part of the build too
 rc=0
 
 cfg()  { tf_out "$TF_CC" mcp_server_env_config | sed -n "s/^$1=//p" | head -1 || true; }
@@ -56,16 +59,17 @@ managed="$(terraform -chdir="$TF_CC" show -json 2>/dev/null \
 # Safety net: with no managed list, "everything not managed" would be EVERYTHING.
 [ -n "$managed" ] || die "could not read the Terraform-managed topic list — refusing to guess what to delete"
 
-statements="$(list_statements | sort)"
+# also skipped: statements Tableflow issues itself (tableflow-alter-…): one-off, already COMPLETED, not part of the session
+statements="$(list_statements | sort | grep -vE "^(${PREBUILT_STATEMENT_PREFIX}|tableflow-)" || true)"
 topics="$(get "$K_KEY" "$K_SEC" "$REST/kafka/v3/clusters/$CLUSTER_ID/topics" | jq -r '.data[].topic_name' | sort \
-  | grep -vxFf <(printf '%s\n' "$managed") | grep -vE '^_|^(error|dlq|success)-lc[cs]-' || true)"
+  | grep -vxFf <(printf '%s\n%s\n%s\n' "$managed" "$PREBUILT_TOPIC" "$ACTIVITY_TOPIC") | grep -vE '^_|^(error|dlq|success)-lc[cs]-' || true)"
 
 echo "${C_BLD}Reset plan${C_OFF}  (environment $ENV_ID, cluster $CLUSTER_ID)"
 echo "  Flink statements : $( [ -n "$statements" ] && echo "$statements" | wc -l | tr -d ' ' || echo 0 )"
 [ -z "$statements" ] || sed 's/^/      • /' <<<"$statements"
 echo "  Topics           : $( [ -n "$topics" ] && echo "$topics" | wc -l | tr -d ' ' || echo 0 )  (+ their -value / -key schema subjects)"
 [ -z "$topics" ] || sed 's/^/      • /' <<<"$topics"
-echo "  Kept             : $(echo "$managed" | tr '\n' ' ')"
+echo "  Kept             : $(echo "$managed" | tr '\n' ' ') + pre-built twin ($PREBUILT_TOPIC, statements ${PREBUILT_STATEMENT_PREFIX}*) + live feed ($ACTIVITY_TOPIC)"
 
 if [ -z "$statements" ] && [ -z "$topics" ]; then ok "nothing to reset"; exit 0; fi
 if [ "$DRY_RUN" = "1" ]; then info "DRY_RUN=1 — nothing deleted"; exit 0; fi

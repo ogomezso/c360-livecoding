@@ -21,7 +21,20 @@ TF_TF          ?= environment/terraform-tableflow-aws
 MCP_ENV        ?= environment/mcp-confluent/.env
 SNAPSHOT_TOPIC ?= c360_snapshot
 AI             ?= claude
-TABLEFLOW      ?= 0
+# 1 = also prepare the Tableflow AWS side (needs an AWS login); 0 to skip. (No trailing comment on the
+# line below: Make would keep the spaces as part of the value and `ifeq ($(TABLEFLOW),1)` would never match.)
+TABLEFLOW      ?= 1
+# Apache Polaris + Trino on a local kind cluster (SQL over the Tableflow tables). It follows TABLEFLOW, so a normal
+# build includes it; POLARIS=0 skips just this part (no Docker needed). Needs TABLEFLOW=1 to make sense.
+POLARIS        ?= $(TABLEFLOW)
+# Lightning Tables: the read-only identity + the real-time front end on kind. Follows POLARIS (same kind cluster);
+# LIGHTNING=0 skips it. The Lightning Table itself is enabled live, after c360_snapshot exists (make lightning-enable).
+LIGHTNING      ?= $(POLARIS)
+# The pre-built twin of the live-built c360_snapshot: created at build time, with Tableflow and Lightning on it, so the
+# second half of the demo has a warm, deterministic table. PREBUILT=0 skips it. Pointless without Tableflow or Lightning.
+PREBUILT       ?= $(if $(filter 1,$(TABLEFLOW) $(LIGHTNING)),1,0)
+PREBUILT_TOPIC ?= c360_snapshot_prebuilt
+export PREBUILT_TOPIC
 MCP_NODE_VERSION ?= 22
 export MCP_NODE_VERSION
 
@@ -34,15 +47,38 @@ LOAD_CC_CREDS = if [ -z "$$TF_VAR_confluent_cloud_api_key" ] && [ -f $(TF_CC)/.e
 ##@ Demo flow
 help: ## Show this help
 	@awk -f scripts/help.awk $(MAKEFILE_LIST)
-	@printf '\nExamples:\n  make up\n  make up AI=copilot TABLEFLOW=1\n  make tableflow-enable TOPIC=$(SNAPSHOT_TOPIC)\n\n'
+	@printf '\nExamples:\n  make up\n  make up AI=copilot POLARIS=0\n  make tableflow-enable TOPIC=$(SNAPSHOT_TOPIC)\n\n'
 
 # Sequential on purpose: each step is a separate make so order holds even under -j.
-UP_STEPS := check infra mcp-env data ai-$(AI)
+# With Tableflow on, the AWS login is checked FIRST (fails in seconds, not after 10 minutes of Confluent),
+# and the storage side is built right after the infrastructure so the assistant context can describe it.
+UP_STEPS := check
+ifeq ($(TABLEFLOW),1)
+UP_STEPS += tableflow-preflight
+endif
+ifeq ($(POLARIS),1)
+UP_STEPS += polaris-preflight
+endif
+ifeq ($(LIGHTNING),1)
+UP_STEPS += lightning-preflight
+endif
+UP_STEPS += infra mcp-env
 ifeq ($(TABLEFLOW),1)
 UP_STEPS += tableflow-up
 endif
+UP_STEPS += data
+ifeq ($(PREBUILT),1)
+UP_STEPS += prebuilt-up
+endif
+ifeq ($(POLARIS),1)
+UP_STEPS += polaris-up
+endif
+ifeq ($(LIGHTNING),1)
+UP_STEPS += lightning-up
+endif
+UP_STEPS += ai-$(AI)
 
-up: ## Provision everything: check, infra, MCP env, data, AI wiring (AI=claude|copilot|bob|all, TABLEFLOW=1)
+up: ## Provision everything: check, infra, Tableflow storage, MCP env, data, AI wiring (AI=claude|copilot|bob|all, TABLEFLOW=0 skips Tableflow and Polaris, POLARIS=0 skips only Polaris + Trino, LIGHTNING=0 skips only the Lightning front end, PREBUILT=0 skips the pre-built twin)
 	@for s in $(UP_STEPS); do \
 	  printf '\n\033[1m▶ make %s\033[0m\n' $$s; \
 	  $(MAKE) --no-print-directory $$s || exit 1; \

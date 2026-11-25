@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tableflow (Kafka topic -> Iceberg/Delta in your S3 bucket), non-interactive.
 #
+#   tableflow.sh preflight                AWS login + CLI present (fails fast, before provisioning)
 #   tableflow.sh up                       AWS bucket + IAM role + provider integration (2-phase Terraform)
 #   tableflow.sh status                   what is deployed, trust-policy state, enabled topics
 #   tableflow.sh enable <topic> [FORMAT]  enable Tableflow on a topic (ICEBERG default, or DELTA)
@@ -69,9 +70,9 @@ existing_var() {
   sed -n "s/^$1[[:space:]]*=[[:space:]]*\"\(.*\)\"/\1/p" "$TF_TF/terraform.tfvars" | head -1
 }
 
-cmd_up() {
-  need aws; cc_deployed
-  # No working default auth and no AWS_PROFILE: try the first profile in ~/.aws/credentials.
+# Needs a working AWS session. With none and no AWS_PROFILE, try the first profile in ~/.aws/credentials.
+ensure_aws_auth() {
+  need aws
   if ! aws sts get-caller-identity >/dev/null 2>&1 && [ -z "${AWS_PROFILE:-}" ] && [ -f "$HOME/.aws/credentials" ]; then
     local first; first="$(grep '^\[' "$HOME/.aws/credentials" | head -1 | tr -d '[]' || true)"
     if [ -n "$first" ] && aws sts get-caller-identity --profile "$first" >/dev/null 2>&1; then
@@ -81,6 +82,17 @@ cmd_up() {
   aws sts get-caller-identity >/dev/null 2>&1 \
     || die "AWS auth failed. Authenticate first (Confluent: your 'assume <role>' command; SSO: 'aws sso login --profile <p>'; or 'aws configure')"
   ok "AWS identity: $(aws sts get-caller-identity --query Arn --output text)"
+}
+
+# Run BEFORE anything is provisioned, so a missing AWS login fails in seconds, not after 10 minutes of Confluent.
+cmd_preflight() {
+  ensure_aws_auth
+  need confluent    # used to enable/disable Tableflow topics from scripts (reset, tableflow-enable)
+  ok "ready to prepare Tableflow storage"
+}
+
+cmd_up() {
+  cc_deployed; ensure_aws_auth
 
   local region role ext
   region="$(aws_region_for_cluster)"; ok "S3 bucket region: $region (matches the Kafka cluster)"
@@ -144,9 +156,10 @@ cmd_disable() {
 }
 
 case "${1:-}" in
+  preflight) cmd_preflight ;;
   up)      cmd_up ;;
   status)  cmd_status ;;
   enable)  shift; cmd_enable "$@" ;;
   disable) shift; cmd_disable "$@" ;;
-  *)       echo "usage: $0 up|status|enable <topic> [FORMAT]|disable <topic>" >&2; exit 2 ;;
+  *)       echo "usage: $0 preflight|up|status|enable <topic> [FORMAT]|disable <topic> [--force]" >&2; exit 2 ;;
 esac

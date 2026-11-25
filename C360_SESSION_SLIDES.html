@@ -249,7 +249,7 @@ html, body {
       </div>
       <div class="slide-content">
         <h1 class="slide-title">From four banking feeds to one real-time customer view</h1>
-        <p class="slide-subtitle">Customer 360 live build — session recap</p>
+        <p class="slide-subtitle">Customer 360 live build — from stream to lakehouse to real time</p>
         <p class="slide-speaker"><strong>Oscar Gomez</strong> · Solutions Engineering, Confluent</p>
       </div>
     </section>
@@ -309,7 +309,7 @@ html, body {
         </svg>
       </div>
       <div class="slide-kicker">Real-time context isn't a nice-to-have anymore — it's the baseline customers and regulators expect.</div>
-      <div class="slide-num">2 / 10</div>
+      <div class="slide-num">2 / 15</div>
     </section>
 
     <!-- 3 · CONTENT DARK: the solution architecture (visual) -->
@@ -327,7 +327,7 @@ html, body {
       <h2 class="slide-title">The solution — an event-streaming architecture</h2>
       <div class="slide-divider" style="background: rgba(0,153,255,0.5);"></div>
       <div class="diagram-wrap">
-        <svg viewBox="0 0 1400 500" role="img" aria-label="An AI coding assistant — Claude Code, IBM Bob, or GitHub Copilot — paired with Confluent MCP builds and governs the pipeline via natural language. Four source systems feed Kafka topics, which Flink continuously joins into the c360_snapshot, all governed end-to-end by Schema Registry, serving apps, dashboards, and APIs in real time.">
+        <svg viewBox="0 0 1400 570" role="img" aria-label="An AI coding assistant — Claude Code, IBM Bob, or GitHub Copilot — paired with Confluent MCP builds and governs the pipeline via natural language. Four source systems feed Kafka topics, which Flink continuously joins into the c360_snapshot, all governed by Schema Registry. The snapshot is then served two ways: Lightning Tables for current state in SQL, and Tableflow into Iceberg with Polaris and Trino for analytics and history.">
           <defs>
             <marker id="arrowSol" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -374,14 +374,27 @@ html, body {
               <line x1="260" y1="270" x2="320" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
               <line x1="580" y1="270" x2="640" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
               <line x1="920" y1="270" x2="980" y2="270" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
-              <line x1="1130" y1="320" x2="1130" y2="415" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="1090" y1="320" x2="900" y2="438" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
+              <line x1="1170" y1="320" x2="1180" y2="438" stroke="currentColor" stroke-width="1.6" marker-end="url(#arrowSol)"/>
             </g>
-            <text x="1130" y="440" text-anchor="middle" font-size="13" fill="#FFFFFF">Serves apps, dashboards, and APIs — in real time</text>
+            <text class="arrow-label" x="965" y="414">Tableflow</text>
+            <text class="arrow-label" x="1196" y="400">Lightning</text>
+
+            <g color="#0099FF">
+              <rect x="520" y="440" width="440" height="100" rx="10" fill="rgba(0,153,255,0.1)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="740" y="486" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Iceberg · Polaris · Trino</text>
+              <text x="740" y="508" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.75)">analytics &amp; history — a few minutes behind</text>
+            </g>
+            <g color="#01CEDB">
+              <rect x="1000" y="440" width="360" height="100" rx="10" fill="rgba(1,206,219,0.12)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="1180" y="486" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Lightning Tables</text>
+              <text x="1180" y="508" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.75)">current state in SQL — ~1 s to ~1 min</text>
+            </g>
           </g>
         </svg>
       </div>
-      <div class="slide-kicker">Same technology stack already running in Confluent Cloud — nothing here is hypothetical.</div>
-      <div class="slide-num">3 / 10</div>
+      <div class="slide-kicker">One governed data product, served two ways: current state with Lightning, history and analytics with Tableflow and Trino.</div>
+      <div class="slide-num">3 / 15</div>
     </section>
 
     <!-- 4 · CONTENT: the how — data roadmap (visual) -->
@@ -396,41 +409,47 @@ html, body {
           <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
         </svg>
       </div>
-      <h2 class="slide-title">The how — a data-first path to the snapshot</h2>
+      <h2 class="slide-title">The how — a data-first path to the snapshot and beyond</h2>
       <div class="slide-divider"></div>
       <div class="diagram-wrap">
-        <svg viewBox="0 0 1400 400" role="img" aria-label="Four-step data path: discover the topics, govern them with schemas, understand the data shape, then build the joined snapshot.">
+        <svg viewBox="0 0 1400 400" role="img" aria-label="Six-step path: discover the topics, govern them with schemas, understand the data shape, build the joined snapshot, open it as an Iceberg table queried with Trino, and serve it in real time with Lightning queries.">
           <g font-family="Inter, sans-serif">
             <line x1="150" y1="140" x2="1250" y2="140" stroke="rgba(4,5,49,0.15)" stroke-width="3"/>
-
             <circle cx="150" cy="140" r="34" fill="#0099FF"/>
             <text x="150" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">1</text>
             <text x="150" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Discover</text>
             <text x="150" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Inventory every topic</text>
             <text x="150" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">& audit schemas</text>
-
-            <circle cx="517" cy="140" r="34" fill="#0099FF"/>
-            <text x="517" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">2</text>
-            <text x="517" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Govern</text>
-            <text x="517" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Enforce a schema before</text>
-            <text x="517" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">transforming anything</text>
-
-            <circle cx="883" cy="140" r="34" fill="#0099FF"/>
-            <text x="883" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">3</text>
-            <text x="883" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Understand</text>
-            <text x="883" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Profile volumes,</text>
-            <text x="883" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">segments, and gaps</text>
-
+            <circle cx="370" cy="140" r="34" fill="#0099FF"/>
+            <text x="370" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">2</text>
+            <text x="370" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Govern</text>
+            <text x="370" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Enforce a schema before</text>
+            <text x="370" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">transforming anything</text>
+            <circle cx="590" cy="140" r="34" fill="#0099FF"/>
+            <text x="590" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">3</text>
+            <text x="590" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Understand</text>
+            <text x="590" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Profile volumes,</text>
+            <text x="590" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">segments, and gaps</text>
+            <circle cx="810" cy="140" r="34" fill="#01CEDB"/>
+            <text x="810" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">4</text>
+            <text x="810" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Build</text>
+            <text x="810" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Join & aggregate into</text>
+            <text x="810" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">one live snapshot</text>
+            <circle cx="1030" cy="140" r="34" fill="#01CEDB"/>
+            <text x="1030" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">5</text>
+            <text x="1030" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Open</text>
+            <text x="1030" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Tableflow to Iceberg,</text>
+            <text x="1030" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">queried with Trino</text>
             <circle cx="1250" cy="140" r="34" fill="#01CEDB"/>
-            <text x="1250" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">4</text>
-            <text x="1250" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Build</text>
-            <text x="1250" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Join & aggregate into</text>
-            <text x="1250" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">one live snapshot</text>
+            <text x="1250" y="149" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">6</text>
+            <text x="1250" y="204" text-anchor="middle" font-size="17" font-weight="700" fill="#040531">Serve</text>
+            <text x="1250" y="228" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">Lightning queries in real</text>
+            <text x="1250" y="246" text-anchor="middle" font-size="13" fill="#040531" opacity="0.75">time, at two speeds</text>
           </g>
         </svg>
       </div>
-      <div class="slide-kicker">Four steps, one dataset — each one gets its own section in this recap.</div>
-      <div class="slide-num">4 / 10</div>
+      <div class="slide-kicker">Six steps, one dataset — the first four build it, the last two put it to work.</div>
+      <div class="slide-num">4 / 15</div>
     </section>
 
     <!-- 5 · CONTENT: sources → Kafka → schema enforcement → tagging (visual) -->
@@ -566,7 +585,7 @@ html, body {
         </svg>
       </div>
       <div class="slide-kicker">Governance gap closed before writing a single line of C360 join logic — every topic is now schema-checked and tagged.</div>
-      <div class="slide-num">5 / 10</div>
+      <div class="slide-num">5 / 15</div>
     </section>
 
     <!-- 6 · CONTENT: dataset analysis, built autonomously (visual) -->
@@ -681,7 +700,7 @@ html, body {
         </svg>
       </div>
       <div class="slide-kicker">Confluent MCP gives any AI coding assistant live read access to every topic — it designed the c360_snapshot from what it found.</div>
-      <div class="slide-num">6 / 10</div>
+      <div class="slide-num">6 / 15</div>
     </section>
 
     <!-- 7 · CONTENT DARK: architecture + data contracts (visual) -->
@@ -825,8 +844,8 @@ html, body {
           </g>
         </svg>
       </div>
-      <div class="slide-kicker">Every transformation above is live in Confluent Cloud right now — not a plan.</div>
-      <div class="slide-num">7 / 10</div>
+      <div class="slide-kicker">The contract the live prompts produce — the pre-built twin has the same shape, so the rest of the demo never waits.</div>
+      <div class="slide-num">7 / 15</div>
     </section>
 
     <!-- 8 · TWO-COLUMN: proof record -->
@@ -876,11 +895,360 @@ html, body {
           <li>IDs, contact fields, and exact timestamps are elided here for the slide — the live record carries all 23 columns.</li>
         </ul>
       </div>
-      <div class="slide-kicker">Consumed straight off the running c360_snapshot topic — not mocked up for this deck.</div>
-      <div class="slide-num">8 / 10</div>
+      <div class="slide-kicker">Consumed straight off a running c360_snapshot topic during the recorded build — not mocked up for this deck.</div>
+      <div class="slide-num">8 / 15</div>
     </section>
 
-    <!-- 9 · CONTENT: next steps -->
+    <!-- 9 · CONTENT: open lakehouse (visual) -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">The open lakehouse — Tableflow, Polaris and Trino</h2>
+      <div class="slide-divider"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 560" role="img" aria-label="The c360_snapshot topic is materialized by Tableflow as an Iceberg table in the customer's own S3 bucket. Polaris federates that catalog and Trino reads it with read-only SQL, using short-lived storage access that Polaris vends. Three notes: the pre-built twin is already materialized, the table is upsert so changes replace rows, and the questions can be asked in plain language.">
+          <defs>
+            <marker id="arrowLake" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(4,5,49,0.5)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <rect x="40" y="30" width="250" height="120" rx="10" fill="rgba(0,153,255,0.08)" stroke="#0099FF" stroke-width="1.5"/>
+            <text x="165" y="72" text-anchor="middle" font-size="14" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">c360_snapshot</text>
+            <text x="165" y="96" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">Flink-built · upsert</text>
+            <text x="165" y="114" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">key: customer_id</text>
+
+            <rect x="397" y="30" width="250" height="120" rx="10" fill="rgba(0,153,255,0.1)" stroke="#0099FF" stroke-width="1.8"/>
+            <text x="522" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Tableflow</text>
+            <text x="522" y="96" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">Iceberg table, upsert mode</text>
+            <text x="522" y="114" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">on by prompt or in the Console</text>
+
+            <rect x="754" y="30" width="250" height="120" rx="10" fill="rgba(0,153,255,0.1)" stroke="#0099FF" stroke-width="1.8"/>
+            <text x="879" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Polaris</text>
+            <text x="879" y="96" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">open Iceberg catalog</text>
+            <text x="879" y="114" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">federates the Tableflow catalog</text>
+
+            <rect x="1111" y="30" width="250" height="120" rx="10" fill="rgba(1,206,219,0.12)" stroke="#01CEDB" stroke-width="1.8"/>
+            <text x="1236" y="72" text-anchor="middle" font-size="16" font-weight="700" fill="#040531">Trino</text>
+            <text x="1236" y="96" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">read-only SQL</text>
+            <text x="1236" y="114" text-anchor="middle" font-size="11.5" fill="#040531" opacity="0.75">catalog polaris · schema = cluster</text>
+
+            <line x1="292" y1="90" x2="395" y2="90" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowLake)"/>
+            <line x1="649" y1="90" x2="752" y2="90" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowLake)"/>
+            <line x1="1006" y1="90" x2="1109" y2="90" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowLake)"/>
+            <text x="343" y="78" text-anchor="middle" font-size="11.5" fill="#14449A" font-weight="600">materializes</text>
+            <text x="700" y="78" text-anchor="middle" font-size="11.5" fill="#14449A" font-weight="600">federated</text>
+            <text x="1057" y="78" text-anchor="middle" font-size="11.5" fill="#14449A" font-weight="600">queried by</text>
+
+            <rect x="397" y="245" width="964" height="70" rx="10" fill="rgba(1,206,219,0.12)" stroke="#01CEDB" stroke-width="1.6"/>
+            <text x="879" y="272" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">S3 bucket in your own account</text>
+            <text x="879" y="296" text-anchor="middle" font-size="12" fill="#040531" opacity="0.75">Iceberg tables as Parquet files + metadata — nothing is copied into a vendor store</text>
+
+            <line x1="522" y1="150" x2="522" y2="243" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowLake)"/>
+            <text x="534" y="204" font-size="11.5" fill="#14449A" font-weight="600">writes · commit ≈ 5 min</text>
+            <line x1="879" y1="243" x2="879" y2="152" stroke="rgba(4,5,49,0.5)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrowLake)"/>
+            <text x="891" y="204" font-size="11.5" fill="#14449A" font-weight="600">vends short-lived access</text>
+            <line x1="1236" y1="243" x2="1236" y2="152" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowLake)"/>
+            <text x="1248" y="204" font-size="11.5" fill="#14449A" font-weight="600">reads the files</text>
+
+            <rect x="40" y="370" width="420" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="60" y="400" font-size="14" font-weight="700" fill="#040531">Already materialized</text>
+            <text x="60" y="428" font-size="12.5" fill="#040531" opacity="0.85">Pre-built twin: Tableflow has been on since</text>
+            <text x="60" y="448" font-size="12.5" fill="#040531" opacity="0.85">the build, so the analytical state is</text>
+            <text x="60" y="468" font-size="12.5" fill="#040531" opacity="0.85">queryable now. The live table you enable</text>
+            <text x="60" y="488" font-size="12.5" fill="#040531" opacity="0.85">warms up in about 5 minutes.</text>
+
+            <rect x="490" y="370" width="420" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="510" y="400" font-size="14" font-weight="700" fill="#040531">Upsert, not append</text>
+            <text x="510" y="428" font-size="12.5" fill="#040531" opacity="0.85">Latest state per customer: the table keeps</text>
+            <text x="510" y="448" font-size="12.5" fill="#040531" opacity="0.85">200 rows, and a change replaces a row —</text>
+            <text x="510" y="468" font-size="12.5" fill="#040531" opacity="0.85">it is never duplicated. Trino is read-only:</text>
+            <text x="510" y="488" font-size="12.5" fill="#040531" opacity="0.85">nothing writes back to the lake.</text>
+
+            <rect x="940" y="370" width="420" height="150" rx="10" fill="rgba(1,206,219,0.1)" stroke="#01CEDB" stroke-width="1.6"/>
+            <text x="960" y="400" font-size="14" font-weight="700" fill="#040531">Ask in plain language</text>
+            <text x="960" y="428" font-size="12.5" fill="#040531" opacity="0.85">“Who interacted with us most recently?”</text>
+            <text x="960" y="448" font-size="12.5" fill="#040531" opacity="0.85">“Which customers with real balances never</text>
+            <text x="960" y="468" font-size="12.5" fill="#040531" opacity="0.85">used digital?” — or run make c360-queries</text>
+            <text x="960" y="488" font-size="12.5" fill="#040531" opacity="0.85">for 8 ready-made business questions.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="slide-kicker">No ETL: the same Kafka topic becomes an open-format table in your own bucket, readable by any engine that speaks Iceberg.</div>
+      <div class="slide-num">9 / 15</div>
+    </section>
+
+    <!-- 10 · CONTENT DARK: two speeds (visual) -->
+    <section class="slide content-slide dark">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">Make something happen — one change, three speeds</h2>
+      <div class="slide-divider" style="background: rgba(0,153,255,0.5);"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 600" role="img" aria-label="One press of the Make something happen button, or one run of make demo-changes, feeds three lanes at three speeds. The raw event goes through a plain producer to a live-feed topic and is queryable through a Lightning Table in about one second. The same change reaches the Flink-built Customer 360 table when Flink commits, up to about a minute, measured 33 to 68 seconds. It reaches the Iceberg table, queried with Trino, with the next Tableflow commit, about five minutes.">
+          <defs>
+            <marker id="arrowSpd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(255,255,255,0.7)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <g color="#3A21ED">
+              <rect x="40" y="215" width="220" height="110" rx="12" fill="rgba(58,33,237,0.18)" stroke="currentColor" stroke-width="1.8"/>
+              <text x="150" y="258" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Make something</text>
+              <text x="150" y="278" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">happen</text>
+              <text x="150" y="304" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.7)">button · make demo-changes</text>
+            </g>
+            <line x1="260" y1="240" x2="418" y2="105" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <text class="arrow-label" x="340" y="148" text-anchor="end">event written to the feed…</text>
+            <line x1="260" y1="285" x2="418" y2="300" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <text class="arrow-label" x="405" y="350" text-anchor="end">…and to the source topics</text>
+            <line x1="590" y1="355" x2="590" y2="448" stroke="rgba(255,255,255,0.5)" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arrowSpd)"/>
+            <text class="arrow-label" x="602" y="408">same topic</text>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="420" y="40" width="340" height="110" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4"/>
+              <text x="590" y="80" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">c360_live_activity</text>
+              <text x="590" y="104" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">plain producer · Avro · no Flink</text>
+              <text x="590" y="122" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">one row per raw event</text>
+            </g>
+            <line x1="760" y1="95" x2="858" y2="95" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <g color="#0099FF">
+              <rect x="860" y="40" width="250" height="110" rx="10" fill="rgba(0,153,255,0.1)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="985" y="86" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Lightning Table</text>
+              <text x="985" y="110" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">committed straight away</text>
+            </g>
+            <line x1="1110" y1="95" x2="1168" y2="95" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <rect x="1170" y="50" width="190" height="90" rx="12" fill="rgba(1,206,219,0.2)" stroke="#01CEDB" stroke-width="1.8"/>
+            <text x="1265" y="92" text-anchor="middle" font-size="30" font-weight="700" fill="#FFFFFF">~1 s</text>
+            <text x="1265" y="116" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.8)">measured ≈ 1.0 s</text>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="420" y="245" width="340" height="110" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4"/>
+              <text x="590" y="285" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" font-family="'SF Mono', Menlo, monospace">c360_snapshot_prebuilt</text>
+              <text x="590" y="309" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">source topics → Flink join</text>
+              <text x="590" y="327" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">commits about every 60 s</text>
+            </g>
+            <line x1="760" y1="300" x2="858" y2="300" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <g color="#0099FF">
+              <rect x="860" y="245" width="250" height="110" rx="10" fill="rgba(0,153,255,0.1)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="985" y="291" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Lightning Table</text>
+              <text x="985" y="315" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">waits for the commit</text>
+            </g>
+            <line x1="1110" y1="300" x2="1168" y2="300" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <rect x="1170" y="255" width="190" height="90" rx="12" fill="rgba(255,195,12,0.18)" stroke="#FFC30C" stroke-width="1.8"/>
+            <text x="1265" y="297" text-anchor="middle" font-size="30" font-weight="700" fill="#FFFFFF">≤ ~1 min</text>
+            <text x="1265" y="321" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.8)">measured 33–68 s</text>
+            <g color="rgba(255,255,255,0.35)">
+              <rect x="420" y="450" width="340" height="110" rx="10" fill="rgba(255,255,255,0.04)" stroke="currentColor" stroke-width="1.4"/>
+              <text x="590" y="490" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF" >Tableflow → Iceberg</text>
+              <text x="590" y="514" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">same topic, published in</text>
+              <text x="590" y="532" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">batches of about 5 minutes</text>
+            </g>
+            <line x1="760" y1="505" x2="858" y2="505" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <g color="#0099FF">
+              <rect x="860" y="450" width="250" height="110" rx="10" fill="rgba(0,153,255,0.1)" stroke="currentColor" stroke-width="1.6"/>
+              <text x="985" y="496" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Polaris + Trino</text>
+              <text x="985" y="520" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.75)">history, counts, joins</text>
+            </g>
+            <line x1="1110" y1="505" x2="1168" y2="505" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" marker-end="url(#arrowSpd)"/>
+            <rect x="1170" y="460" width="190" height="90" rx="12" fill="rgba(170,43,206,0.3)" stroke="#AA2BCE" stroke-width="1.8"/>
+            <text x="1265" y="502" text-anchor="middle" font-size="30" font-weight="700" fill="#FFFFFF">~5 min</text>
+            <text x="1265" y="526" text-anchor="middle" font-size="11.5" fill="rgba(255,255,255,0.8)">a few minutes behind</text>
+          </g>
+        </svg>
+      </div>
+      <div class="slide-kicker">Same button, same pipeline: the raw event is there in about a second, the aggregated view a minute later, the lake minutes after that.</div>
+      <div class="slide-num">10 / 15</div>
+    </section>
+
+    <!-- 11 · TWO-COLUMN: pick the engine by the question -->
+    <section class="slide two-column">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">Pick the engine by the question</h2>
+      <div class="slide-divider"></div>
+      <div class="col-left">
+        <p class="col-label">Lightning Tables — what is true right now</p>
+        <ul>
+          <li>Key lookups, filters and top-N on <strong>one table</strong>: “show me that customer”, “what just happened”.</li>
+          <li>Fresh in about a second (raw feed) to about a minute (Customer 360).</li>
+          <li>Console or CLI, the live front end over JDBC — or just ask your assistant, through the <strong>confluent-rtce</strong> MCP server.</li>
+        </ul>
+        <pre>SELECT full_name, kind, action, ts
+FROM c360_live_activity
+ORDER BY ts DESC LIMIT 5</pre>
+      </div>
+      <div class="col-right">
+        <p class="col-label">Trino on Iceberg — what is true over time</p>
+        <ul>
+          <li>Counts, sums, group-bys, joins and history: “how many…”, “which segment…”.</li>
+          <li>A few minutes behind; read-only through Polaris, in your own bucket.</li>
+          <li>Ask “how many?” of Lightning and the honest answer is: it can't aggregate — list the rows, or use Trino.</li>
+        </ul>
+        <pre>SELECT segment, count(*)
+FROM polaris."lkc-817z505".c360_snapshot_prebuilt
+WHERE risk_band = 'HIGH' GROUP BY segment</pre>
+      </div>
+      <div class="slide-kicker">Same data product, two serving paths — chosen by the question, not by the tool.</div>
+      <div class="slide-num">11 / 15</div>
+    </section>
+
+    <!-- 12 · CONTENT: the trade-off -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">The trade-off we accepted: exactly-once, up to a minute behind</h2>
+      <div class="slide-divider"></div>
+      <div class="slide-body">
+        <ul>
+          <li><strong>Why it lags.</strong> A Flink statement writes to Kafka in transactions that commit about once a minute (exactly-once). Lightning Tables read only committed records, so every Flink hop adds 0–60 seconds.</li>
+          <li><strong>What we measured.</strong> The raw event shows up in about a second; the Customer 360 row 33–68 seconds after the button press.</li>
+          <li><strong>What we ruled out.</strong> Reading uncommitted data only helps Flink-to-Flink reads and can show duplicates; the commit interval is not configurable today. We will revisit when a shorter one is available.</li>
+          <li><strong>What we did instead.</strong> Two speeds, said out loud: a lane with no Flink for “what just happened”, and the exactly-once Customer 360 row for “who is this customer”.</li>
+        </ul>
+      </div>
+      <div class="slide-kicker">A faster Customer 360 row was not on offer — so the demo turns the delay into the point instead of hiding it.</div>
+      <div class="slide-num">12 / 15</div>
+    </section>
+
+    <!-- 13 · CONTENT: one command (visual) -->
+    <section class="slide content-slide">
+      <div class="slide-logo-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
+          <circle cx="14" cy="18" r="12" fill="none" stroke="#040531" stroke-width="1.5"/>
+          <line x1="14" y1="7" x2="14" y2="29" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="18" x2="25" y2="18" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="6" y1="10" x2="22" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="10" x2="6" y2="26" stroke="#040531" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="34" y="23" font-family="Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="600" fill="#040531" letter-spacing="2">CONFLUENT</text>
+        </svg>
+      </div>
+      <h2 class="slide-title">One command builds it all — and one tears it down</h2>
+      <div class="slide-divider"></div>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1400 500" role="img" aria-label="One command, make up with AI equal to claude or bob, runs seven steps in order: preflight, infrastructure with Terraform, data, the pre-built twin and live feed, Polaris and Trino, the live front end, and the assistant wiring. Below, four commands for the day-to-day: info and status, demo-changes, reset, and down.">
+          <defs>
+            <marker id="arrowUp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(4,5,49,0.5)" />
+            </marker>
+          </defs>
+          <g font-family="Inter, sans-serif">
+            <path d="M1,62 L1,48 L1399,48 L1399,62" fill="none" stroke="rgba(4,5,49,0.3)" stroke-width="1.4"/>
+            <rect x="560" y="30" width="280" height="36" rx="18" fill="#F5F7FF"/>
+            <text x="700" y="54" text-anchor="middle" font-size="18" font-weight="700" fill="#040531" font-family="'SF Mono', Menlo, monospace">make up AI=claude</text>
+            <rect x="1" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#0099FF" stroke-width="1.6"/>
+            <circle cx="27" cy="103" r="14" fill="#0099FF"/>
+            <text x="27" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">1</text>
+            <text x="85" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Preflight</text>
+            <text x="85" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Tools and logins</text>
+            <text x="85" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">checked before</text>
+            <text x="85" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">anything is built</text>
+            <line x1="171" y1="150" x2="204" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="206" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#0099FF" stroke-width="1.6"/>
+            <circle cx="232" cy="103" r="14" fill="#0099FF"/>
+            <text x="232" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">2</text>
+            <text x="290" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Infra</text>
+            <text x="290" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Terraform: environment,</text>
+            <text x="290" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">cluster, Flink pool,</text>
+            <text x="290" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">S3 bucket, IAM role</text>
+            <line x1="376" y1="150" x2="409" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="411" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#0099FF" stroke-width="1.6"/>
+            <circle cx="437" cy="103" r="14" fill="#0099FF"/>
+            <text x="437" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">3</text>
+            <text x="495" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Data</text>
+            <text x="495" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">4 source topics,</text>
+            <text x="495" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">200 customers,</text>
+            <text x="495" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">generators running</text>
+            <line x1="581" y1="150" x2="614" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="616" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#01CEDB" stroke-width="1.6"/>
+            <circle cx="642" cy="103" r="14" fill="#01CEDB"/>
+            <text x="642" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">4</text>
+            <text x="700" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Twin + feed</text>
+            <text x="700" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Flink SQL twin,</text>
+            <text x="700" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">live-feed topic,</text>
+            <text x="700" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Tableflow + Lightning</text>
+            <line x1="786" y1="150" x2="819" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="821" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#01CEDB" stroke-width="1.6"/>
+            <circle cx="847" cy="103" r="14" fill="#01CEDB"/>
+            <text x="847" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">5</text>
+            <text x="905" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Polaris + Trino</text>
+            <text x="905" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Open catalog and SQL</text>
+            <text x="905" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">engine on a local</text>
+            <text x="905" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">kind cluster</text>
+            <line x1="991" y1="150" x2="1024" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="1026" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#01CEDB" stroke-width="1.6"/>
+            <circle cx="1052" cy="103" r="14" fill="#01CEDB"/>
+            <text x="1052" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">6</text>
+            <text x="1110" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Live app</text>
+            <text x="1110" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">Lightning identity,</text>
+            <text x="1110" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">read-only key,</text>
+            <text x="1110" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">real-time front end</text>
+            <line x1="1196" y1="150" x2="1229" y2="150" stroke="rgba(4,5,49,0.5)" stroke-width="1.6" marker-end="url(#arrowUp)"/>
+            <rect x="1231" y="75" width="168" height="150" rx="10" fill="rgba(0,153,255,0.07)" stroke="#01CEDB" stroke-width="1.6"/>
+            <circle cx="1257" cy="103" r="14" fill="#01CEDB"/>
+            <text x="1257" y="108.5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">7</text>
+            <text x="1315" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#040531">Assistant</text>
+            <text x="1315" y="176" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">AI=claude or bob:</text>
+            <text x="1315" y="193" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">MCP servers and</text>
+            <text x="1315" y="210" text-anchor="middle" font-size="11" fill="#040531" opacity="0.75">context files</text>
+            <text x="700" y="298" text-anchor="middle" font-size="13" font-weight="600" fill="#14449A" letter-spacing="0.5">THEN, DAY TO DAY</text>
+            <rect x="40" y="320" width="310" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="60" y="354" font-size="14" font-weight="700" fill="#14449A" font-family="'SF Mono', Menlo, monospace">make info · make status</text>
+            <text x="60" y="384" font-size="12.5" fill="#040531" opacity="0.85">What is deployed, the IDs and</text>
+            <text x="60" y="404" font-size="12.5" fill="#040531" opacity="0.85">endpoints, and what is running right</text>
+            <text x="60" y="424" font-size="12.5" fill="#040531" opacity="0.85">now.</text>
+            <rect x="380" y="320" width="310" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="400" y="354" font-size="14" font-weight="700" fill="#14449A" font-family="'SF Mono', Menlo, monospace">make demo-changes</text>
+            <text x="400" y="384" font-size="12.5" fill="#040531" opacity="0.85">The Make something happen button: new</text>
+            <text x="400" y="404" font-size="12.5" fill="#040531" opacity="0.85">events, written at two speeds.</text>
+            <rect x="720" y="320" width="310" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="740" y="354" font-size="14" font-weight="700" fill="#14449A" font-family="'SF Mono', Menlo, monospace">make reset</text>
+            <text x="740" y="384" font-size="12.5" fill="#040531" opacity="0.85">Deletes what the prompts built live.</text>
+            <text x="740" y="404" font-size="12.5" fill="#040531" opacity="0.85">Keeps the infrastructure, the twin and</text>
+            <text x="740" y="424" font-size="12.5" fill="#040531" opacity="0.85">the feed.</text>
+            <rect x="1060" y="320" width="310" height="150" rx="10" fill="rgba(4,5,49,0.04)" stroke="rgba(4,5,49,0.25)" stroke-width="1.4"/>
+            <text x="1080" y="354" font-size="14" font-weight="700" fill="#14449A" font-family="'SF Mono', Menlo, monospace">make down</text>
+            <text x="1080" y="384" font-size="12.5" fill="#040531" opacity="0.85">Destroys everything, Confluent and AWS</text>
+            <text x="1080" y="404" font-size="12.5" fill="#040531" opacity="0.85">side. Asks you to type “destroy”</text>
+            <text x="1080" y="424" font-size="12.5" fill="#040531" opacity="0.85">first.</text>
+          </g>
+        </svg>
+      </div>
+      <div class="slide-kicker">Both assistants: make up AI=claude && make ai-bob. Everything above is Terraform and Make — no manual console clicking.</div>
+      <div class="slide-num">13 / 15</div>
+    </section>
+
+    <!-- 14 · CONTENT: next steps -->
     <section class="slide content-slide">
       <div class="slide-logo-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="160" height="29">
@@ -896,19 +1264,19 @@ html, body {
       <div class="slide-divider"></div>
       <div class="slide-body">
         <ul>
-          <li>Sink <strong>c360_snapshot</strong> to Iceberg via Tableflow — the AWS-side plumbing (S3 bucket, IAM role, provider integration) is already provisioned in Terraform; the next prompt is <em>create-tableflow-catalog-integration</em> + <em>create-tableflow-topic</em>.</li>
-          <li>Automate the entire environment — topics, schemas, tags, Flink jobs, Tableflow — as Terraform generated the same way: by prompting the assistant, without hand-writing a line of HCL.</li>
-          <li>Extend the same prompt-driven build to <strong>IBM Bob</strong> — Confluent's MCP server already documents a Bob config path (<em>~/.bob/settings/mcp_settings.json</em>); wire it up here so the build isn't tied to one assistant.</li>
-          <li>Wire up <strong>GitHub Copilot</strong> too — Confluent already runs an approved Copilot MCP endpoint org-wide; add the project-level config so the same prompts drive the build from VS Code.</li>
-          <li>Set a state TTL on the Flink rollup stages before scaling past demo volume — Flink flagged this itself at ~54 customers.</li>
+          <li>Wire up <strong>GitHub Copilot</strong> too — Confluent already runs an approved Copilot MCP endpoint org-wide; add the project-level config so the same prompts drive the build from VS Code. (Claude Code and IBM Bob are wired by <em>make up</em> and <em>make ai-bob</em>.)</li>
+          <li>Put the live feed to work: point an agent at <strong>c360_live_activity</strong> through the <em>confluent-rtce</em> MCP server for “what just happened” alerts, not only questions.</li>
+          <li>Generate the Terraform for the use case itself — topics, schemas, tags, Flink jobs — by prompting the assistant, so it is reproducible on other environments.</li>
+          <li>Revisit the Customer 360 lag if a shorter Flink commit interval becomes available; until then the two-speed design keeps the demo honest.</li>
+          <li>Set a state TTL on the Flink rollup stages before scaling past demo volume — Flink flagged this itself during the first build.</li>
           <li>Ingest credit-side transactions (salary, deposits, incoming transfers) so <strong>net_amount_30d</strong> reflects true cash flow, not just spend.</li>
         </ul>
       </div>
-      <div class="slide-kicker">None of this is hypothetical — the Tableflow plumbing is already provisioned, and Bob + Copilot MCP paths are already documented.</div>
-      <div class="slide-num">9 / 10</div>
+      <div class="slide-kicker">None of this is hypothetical — Tableflow, Trino, Lightning and the Bob wiring are already in place; these are the extensions.</div>
+      <div class="slide-num">14 / 15</div>
     </section>
 
-    <!-- 10 · CLOSING -->
+    <!-- 15 · CLOSING -->
     <section class="slide closing">
       <div class="slide-logo">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 36" width="180" height="32">
@@ -924,7 +1292,7 @@ html, body {
         <h1>Thank you</h1>
         <p>Questions, or want to see the SQL behind any slide?</p>
       </div>
-      <div class="slide-footer">customer-360-demo-environment · env-16z003 · lkc-38r9zy2 · 2026-08-11</div>
+      <div class="slide-footer">customer-360-demo-environment-bc58013c · env-jgog52 · lkc-817z505 · 2026-11-25</div>
     </section>
 
   </div>

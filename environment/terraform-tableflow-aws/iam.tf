@@ -69,6 +69,19 @@ data "aws_iam_policy_document" "tableflow_assume_role" {
       values   = [var.confluent_external_id]
     }
   }
+
+  # Confluent also tags the session when it assumes the role. Without this statement the
+  # AssumeRole is denied and Tableflow fails with "Unable to assume the IAM role specified in
+  # the provider integration" even though the AssumeRole statement above is correct.
+  # No external-ID condition here, matching a known-working Tableflow role.
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [var.confluent_provider_integration_role_arn]
+    }
+    actions = ["sts:TagSession"]
+  }
 }
 
 # IAM Role for Tableflow
