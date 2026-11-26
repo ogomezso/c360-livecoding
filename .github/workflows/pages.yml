@@ -1,0 +1,42 @@
+# Publishes the project page: site/ (landing page) plus the session slides.
+# The slides stay in one place (C360_SESSION_SLIDES.html); the workflow copies
+# them into the published site, so there is no second copy to keep in sync.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - C360_SESSION_SLIDES.html
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/slides
+          cp -R site/. _site/
+          cp C360_SESSION_SLIDES.html _site/slides/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

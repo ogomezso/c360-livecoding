@@ -4,6 +4,8 @@
 
 This project demonstrates how to build a production-grade **Customer 360 real-time data product** on Confluent Cloud using **Apache Flink SQL** and an **AI coding assistant connected through MCP (Model Context Protocol)** — Claude Code, GitHub Copilot or IBM Bob.
 
+**Project page:** [ogomezso.github.io/c360-livecoding](https://ogomezso.github.io/c360-livecoding/) — the business value of the demo flow and the [session slides](https://ogomezso.github.io/c360-livecoding/slides/).
+
 Instead of writing SQL manually, you'll use natural language prompts with your assistant to explore data, design schemas, generate Flink SQL, and build streaming aggregations—all through conversation.
 
 ---

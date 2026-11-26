@@ -1264,7 +1264,7 @@ WHERE risk_band = 'HIGH' GROUP BY segment</pre>
       <div class="slide-divider"></div>
       <div class="slide-body">
         <ul>
-          <li>Wire up <strong>GitHub Copilot</strong> too — Confluent already runs an approved Copilot MCP endpoint org-wide; add the project-level config so the same prompts drive the build from VS Code. (Claude Code and IBM Bob are wired by <em>make up</em> and <em>make ai-bob</em>.)</li>
+          <li>Wire up <strong>GitHub Copilot</strong> too — Confluent's MCP server works with Copilot too; add the project-level config so the same prompts drive the build from VS Code. (Claude Code and IBM Bob are wired by <em>make up</em> and <em>make ai-bob</em>.)</li>
           <li>Put the live feed to work: point an agent at <strong>c360_live_activity</strong> through the <em>confluent-rtce</em> MCP server for “what just happened” alerts, not only questions.</li>
           <li>Generate the Terraform for the use case itself — topics, schemas, tags, Flink jobs — by prompting the assistant, so it is reproducible on other environments.</li>
           <li>Revisit the Customer 360 lag if a shorter Flink commit interval becomes available; until then the two-speed design keeps the demo honest.</li>
@@ -1292,7 +1292,7 @@ WHERE risk_band = 'HIGH' GROUP BY segment</pre>
         <h1>Thank you</h1>
         <p>Questions, or want to see the SQL behind any slide?</p>
       </div>
-      <div class="slide-footer">customer-360-demo-environment-bc58013c · env-jgog52 · lkc-817z505 · 2026-11-25</div>
+      <div class="slide-footer">Customer 360 live build · Confluent Cloud · 2026-11</div>
     </section>
 
   </div>
